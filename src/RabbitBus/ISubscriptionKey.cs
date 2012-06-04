@@ -1,0 +1,7 @@
+namespace RabbitBus
+{
+	interface ISubscriptionKey
+	{
+
+	}
+}

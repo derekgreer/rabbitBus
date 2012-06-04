@@ -1,0 +1,129 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{8331C0C3-5E94-4E7C-9C45-2223CC4C83C5}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>RabbitBus.Specs</RootNamespace>
+    <AssemblyName>RabbitBus.Specs</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>169</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ExpectedObjects">
+      <HintPath>..\..\lib\ExpectedObjects\lib\ExpectedObjects.dll</HintPath>
+    </Reference>
+    <Reference Include="Machine.Specifications">
+      <HintPath>..\..\lib\Machine.Specifications\lib\net40\Machine.Specifications.dll</HintPath>
+    </Reference>
+    <Reference Include="Moq">
+      <HintPath>..\..\lib\Moq\lib\NET40\Moq.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\lib\Newtonsoft.Json\lib\net40\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="RabbitMQ.Client">
+      <HintPath>..\..\lib\RabbitMQ.Client\lib\net30\RabbitMQ.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Infrastructure\ActionExtensions.cs" />
+    <Compile Include="Infrastructure\AutoMessageHandler.cs" />
+    <Compile Include="Infrastructure\ByteExtensions.cs" />
+    <Compile Include="Infrastructure\ConsoleLogger.cs" />
+    <Compile Include="Infrastructure\Enumerator.cs" />
+    <Compile Include="Infrastructure\BusExtensions.cs" />
+    <Compile Include="Infrastructure\ErrorSerializationStrategy.cs" />
+    <Compile Include="Infrastructure\IntegrationAttribute.cs" />
+    <Compile Include="Infrastructure\ObjectExtensions.cs" />
+    <Compile Include="Infrastructure\Parameter.cs" />
+    <Compile Include="Infrastructure\RabbitHandlers.cs" />
+    <Compile Include="Infrastructure\RabbitService.cs" />
+    <Compile Include="Infrastructure\TestSubscriptionConvention.cs" />
+    <Compile Include="Infrastructure\Wait.cs" />
+    <Compile Include="Integration\AcceptanceRequiredSpecs.cs" />
+    <Compile Include="Integration\AutoSubscriptionSpecs.cs" />
+    <Compile Include="Integration\BinarySerializerSpecs.cs" />
+    <Compile Include="Integration\ConnectionSpecs.cs" />
+    <Compile Include="Integration\ConsumeConfigSpecs.cs" />
+    <Compile Include="Integration\CorrelationSpecs.cs" />
+    <Compile Include="Integration\JsonSerializerSpecs.cs" />
+    <Compile Include="Integration\DeadLetterSpecs.cs" />
+    <Compile Include="Integration\DirectExchangeConfigurationSpecs.cs" />
+    <Compile Include="Integration\ErrorHandlingSpecs.cs" />
+    <Compile Include="Integration\JsonSerializationSpecs.cs" />
+    <Compile Include="Integration\LoggingSpecs.cs" />
+    <Compile Include="Integration\QualityOfServiceSpecs.cs" />
+    <Compile Include="Integration\QueueBuilderSpecs.cs" />
+    <Compile Include="Integration\RedeliverySpecs.cs" />
+    <Compile Include="Integration\PersistentMessagesSpecs.cs" />
+    <Compile Include="Integration\RpcSpecs.cs" />
+    <Compile Include="Integration\SecuritySpecs.cs" />
+    <Compile Include="Integration\SerializationStrategyConfigurationSpecs.cs" />
+    <Compile Include="Integration\FanoutExchangeConfigurationSpecs.cs" />
+    <Compile Include="Integration\GetMessageSpecs.cs" />
+    <Compile Include="Integration\HeaderExchangeConfigurationSpecs.cs" />
+    <Compile Include="Integration\PublishConfigSpecs.cs" />
+    <Compile Include="Integration\TopicExchangeConfigurationSpecs.cs" />
+    <Compile Include="Integration\UnsubscribeSpecs.cs" />
+    <Compile Include="Integration\SubscribeSpecs.cs" />
+    <Compile Include="Integration\PublishSpecs.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Infrastructure\RabbitExchange.cs" />
+    <Compile Include="Infrastructure\RabbitQueue.cs" />
+    <Compile Include="TestTypes\AutoMessage.cs" />
+    <Compile Include="TestTypes\ReplyMessage.cs" />
+    <Compile Include="TestTypes\RequestMessage.cs" />
+    <Compile Include="TestTypes\TestMessage.cs" />
+    <Compile Include="TestTypes\TestMessage2.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RabbitBus.Serialization.Json\RabbitBus.Serialization.Json.csproj">
+      <Project>{90717B24-C20C-4662-8695-6C485982343C}</Project>
+      <Name>RabbitBus.Serialization.Json</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\RabbitBus\RabbitBus.csproj">
+      <Project>{3EF0821B-4900-42E9-9610-A6F29362C825}</Project>
+      <Name>RabbitBus</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

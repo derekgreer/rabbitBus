@@ -1,0 +1,136 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{3EF0821B-4900-42E9-9610-A6F29362C825}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>RabbitBus</RootNamespace>
+    <AssemblyName>RabbitBus</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ExpectedObjects">
+      <HintPath>..\..\lib\ExpectedObjects\lib\ExpectedObjects.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\lib\Newtonsoft.Json\lib\net40\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="RabbitMQ.Client, Version=2.7.1.0, Culture=neutral, PublicKeyToken=89e7d7c5feba84ce, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\RabbitMQ.Client\lib\net30\RabbitMQ.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\CommonAssemblyInfo.cs">
+      <Link>CommonAssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="AutoSubscription.cs" />
+    <Compile Include="Configuration\AutoSubscriptionModelBuilder.cs" />
+    <Compile Include="Configuration\BinarySerializationStrategy.cs" />
+    <Compile Include="Configuration\DefaultHandlerConvention.cs" />
+    <Compile Include="Configuration\IAutoSubscriptionModel.cs" />
+    <Compile Include="Configuration\IConfigurationContext.cs" />
+    <Compile Include="Configuration\IConfigurationModel.cs" />
+    <Compile Include="Configuration\IConsumeConfigurationContext.cs" />
+    <Compile Include="Configuration\IConsumeInfo.cs" />
+    <Compile Include="Configuration\IDeadLetterStrategy.cs" />
+    <Compile Include="Configuration\IErrorContext.cs" />
+    <Compile Include="Configuration\IExchangeConfiguration.cs" />
+    <Compile Include="Configuration\IExchangeInfo.cs" />
+    <Compile Include="Configuration\INegatableExchangeConfiguration.cs" />
+    <Compile Include="Configuration\INegatableQueueConfiguration.cs" />
+    <Compile Include="Configuration\Internal\AutoSubscriber.cs" />
+    <Compile Include="Configuration\Internal\AutoSubscriptionModel.cs" />
+    <Compile Include="Configuration\Internal\ConfigurationContext.cs" />
+    <Compile Include="Configuration\Internal\ConfigurationModel.cs" />
+    <Compile Include="Configuration\Internal\ConsumeConfigurationContext.cs" />
+    <Compile Include="Configuration\Internal\ConsumeInfo.cs" />
+    <Compile Include="Configuration\Internal\DefaultDeadLetterStrategy.cs" />
+    <Compile Include="Configuration\Internal\DefaultPublicationRouteInfoLookupStrategy.cs" />
+    <Compile Include="Configuration\Internal\DefaultSubscriptionRouteInfoLookupStrategy.cs" />
+    <Compile Include="Configuration\Internal\EnumerableExtensions.cs" />
+    <Compile Include="Configuration\Internal\ErrorContext.cs" />
+    <Compile Include="Configuration\Internal\ExchangeInfo.cs" />
+    <Compile Include="Configuration\Internal\MappingRouteInfoLookupStrategy.cs" />
+    <Compile Include="Configuration\Internal\NullDeadLetterStrategy.cs" />
+    <Compile Include="Configuration\Internal\PublishConfigurationContext.cs" />
+    <Compile Include="Configuration\Internal\PublishInfo.cs" />
+    <Compile Include="Configuration\Internal\QueueInfo.cs" />
+    <Compile Include="Configuration\Internal\RouteConfiguration.cs" />
+    <Compile Include="Configuration\IPublishConfigurationContext.cs" />
+    <Compile Include="Configuration\IPublishInfo.cs" />
+    <Compile Include="Configuration\IPublishInfoSource.cs" />
+    <Compile Include="Configuration\IQueueConfiguration.cs" />
+    <Compile Include="Configuration\IQueueInfo.cs" />
+    <Compile Include="Configuration\IRouteConfiguration.cs" />
+    <Compile Include="Configuration\IRouteInfoLookupStrategy.cs" />
+    <Compile Include="Configuration\ISerializationStrategy.cs" />
+    <Compile Include="Configuration\ISubscriptionConvention.cs" />
+    <Compile Include="Configuration\SubscriptionConventionBase.cs" />
+    <Compile Include="ConnectionUnavailableException.cs" />
+    <Compile Include="ConsumerContext.cs" />
+    <Compile Include="DefaultSubscriptionConvention.cs" />
+    <Compile Include="MemoryQueueStrategy.cs" />
+    <Compile Include="ITimeProvider.cs" />
+    <Compile Include="ThrowingQueueStrategy.cs" />
+    <Compile Include="IBus.cs" />
+    <Compile Include="IConsumerContext.cs" />
+    <Compile Include="IHandlerConvention.cs" />
+    <Compile Include="IMessageHandler.cs" />
+    <Compile Include="IMessagePublisher.cs" />
+    <Compile Include="IQueueStrategy.cs" />
+    <Compile Include="ISubscriptionKey.cs" />
+    <Compile Include="Bus.cs" />
+    <Compile Include="Logging\LogEntry.cs" />
+    <Compile Include="Logging\Logger.cs" />
+    <Compile Include="Logging\ILogger.cs" />
+    <Compile Include="MessageContext.cs" />
+    <Compile Include="MessageInfo.cs" />
+    <Compile Include="MessagePublisher.cs" />
+    <Compile Include="BusBuilder.cs" />
+    <Compile Include="Subscription.cs" />
+    <Compile Include="SubscriptionKey.cs" />
+    <Compile Include="TimeProvider.cs" />
+    <Compile Include="Utilities\QueueBuilder.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <id>RabbitBus</id>
+    <version>0.0.0</version>
+    <authors>Derek Greer</authors>
+    <owners>Derek Greer</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>RabbitMQ client library.</description>
+    <tags>RabbitBus RabbitMQ Client AMQP Queue,Bus</tags>
+	<dependencies>
+		<dependency id="RabbitMQ.Client" version="2.8.1" />
+	</dependencies>
+  </metadata>
+  <files>
+	<file src="build\RabbitBus.dll" target="lib\net40" />
+	<file src="build\RabbitBus.pdb" target="lib\net40" />
+	<file src="src\RabbitBus\**\*.cs" target="src" />
+  </files>
+</package>
