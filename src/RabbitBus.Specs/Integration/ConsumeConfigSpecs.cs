@@ -43,21 +43,20 @@ namespace RabbitBus.Specs.Integration
 		public const string ExchangeName = "TestMessage";
 		static string _actualMessage;
 		static string _expectedMessage;
-		static Bus _subject;
+		static Bus _bus;
 		static RabbitExchange _exchange;
 
 		Establish context = () =>
 			{
 				_exchange = new RabbitExchange("localhost", ExchangeName, ExchangeType.Direct);
 
-				var builder = new BusBuilder();
-				_subject = builder.Build();
-				_subject.Connect();
-				_subject.Subscribe<TestMessage>(m => { _actualMessage = m.Message.Text; });
+				_bus = new Bus();
+				_bus.Connect();
+				_bus.Subscribe<TestMessage>(m => { _actualMessage = m.Message.Text; });
 				_expectedMessage = "test";
 			};
 
-		Cleanup after = () => _subject.Close();
+		Cleanup after = () => _bus.Close();
 
 		Because of = () => _exchange.Publish(new TestMessage("test"));
 

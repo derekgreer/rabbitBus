@@ -11,7 +11,6 @@ namespace RabbitBus.Configuration
 		IConfigurationContext WithLogger(ILogger logger);
 		IConfigurationContext WithDeadLetterQueue();
 		IConfigurationContext WithDeadLetterQueue(string queueName);
-		IConfigurationContext AutoSubscribe(IAutoSubscriptionModel autoSubscriptionModel);
 		IConfigurationContext WithConnectionUnavailableQueueStrategy(IQueueStrategy queueStrategy);
 		IConfigurationContext WithReconnectionAttemptInterval(TimeSpan timeSpan);
 	}

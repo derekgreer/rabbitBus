@@ -11,7 +11,6 @@ namespace RabbitBus.Specs.Integration
 	{
 		const string SpecId = "A91C7D26-DD75-40A6-A191-0E52CD76D8AD";
 		static Bus _publisher;
-		static RabbitQueue _authorizedQueue;
 		static string _userId;
 		static Bus _subscriber;
 

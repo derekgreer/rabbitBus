@@ -11,7 +11,6 @@ namespace RabbitBus.Specs.Integration
 	[Subject(typeof (BusBuilder))]
 	public class when_configuring_a_message_with_a_direct_exchange
 	{
-		static string _exchangeType;
 		static IPublishConfigurationContext _publishConfigurationContext;
 
 		Establish context = () => new BusBuilder().Configure(ctx => _publishConfigurationContext = ctx.Publish<TestMessage>().WithExchange("any", cfg => cfg.Direct())).Build();

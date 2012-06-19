@@ -3,14 +3,12 @@ using RabbitMQ.Client;
 
 namespace RabbitBus.Configuration
 {
-	public abstract class SubscriptionConventionBase : ISubscriptionConvention
+	public abstract class PublishConfigurationConventionBase : IPublishConfigurationConvention
 	{
 		public abstract bool ShouldRegister(Type type);
 
 		public abstract string GetExchangeName(Type type);
-
-		public abstract string GetQueueName(Type type);
-	
+		
 		public string GetExchangeType(Type type)
 		{
 			return ExchangeType.Direct;
@@ -41,12 +39,7 @@ namespace RabbitBus.Configuration
 			return false;
 		}
 
-		public bool IsAutoDeleteQueue(Type type)
-		{
-			return true;
-		}
-
-		public bool IsDurableQueue(Type type)
+		public bool IsPersistent(Type type)
 		{
 			return false;
 		}
@@ -56,9 +49,9 @@ namespace RabbitBus.Configuration
 			return null;
 		}
 
-		public Action<IErrorContext> GetErrorCallback(Type type)
+		public bool IsSigned(Type type)
 		{
-			return null;
+			return false;
 		}
 	}
 }

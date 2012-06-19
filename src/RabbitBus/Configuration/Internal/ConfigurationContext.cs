@@ -15,7 +15,7 @@ namespace RabbitBus.Configuration.Internal
 		public IPublishConfigurationContext Publish<TMessage>()
 		{
 			var p = new PublishConfigurationContext(typeof(TMessage).Name);
-			ConfigurationModel.PublicationRouteConfiguration.AddPolicy<MappingRouteInfoLookupStrategy<IPublishInfo>>(
+			ConfigurationModel.PublishRouteConfiguration.AddPolicy<MappingRouteInfoLookupStrategy<IPublishInfo>>(
 				typeof (TMessage), p.PublishInfo);
 			return p;
 		}
@@ -49,13 +49,6 @@ namespace RabbitBus.Configuration.Internal
 		public IConfigurationContext WithDeadLetterQueue(string queueName)
 		{
 			ConfigurationModel.DefaultDeadLetterStrategy = new DefaultDeadLetterStrategy(queueName);
-			return this;
-		}
-
-		public IConfigurationContext AutoSubscribe(IAutoSubscriptionModel autoSubscriptionModel)
-		{
-			var autoSubscriber = new AutoSubscriber();
-			autoSubscriber.Subscribe(ConfigurationModel, autoSubscriptionModel);
 			return this;
 		}
 

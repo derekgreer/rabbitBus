@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Text;
 using Machine.Specifications;
 using RabbitBus.Configuration;
-using RabbitBus.Configuration.Internal;
 using RabbitBus.Specs.Infrastructure;
 using RabbitBus.Specs.TestTypes;
 using RabbitMQ.Client;
@@ -15,7 +14,6 @@ namespace RabbitBus.Specs.Integration
 	[Subject("Headers Exchange")]
 	public class when_configuring_a_message_with_a_headers_exchange
 	{
-		static string _exchangeType;
 		static IPublishConfigurationContext _publishConfigurationContext;
 
 		Establish context =
@@ -102,29 +100,29 @@ namespace RabbitBus.Specs.Integration
 		static IBasicProperties _messageProperties;
 		static Bus _bus;
 
-		Cleanup after = () =>
-		{
-			_bus.Close();
-			_queue.Delete().Close();
-		};
-
 		Establish context = () =>
-		{
-			var headers = new Dictionary<string, object>();
-			headers.Add("header-key", Encoding.UTF8.GetBytes("header key value"));
+			{
+				var headers = new Dictionary<string, object>();
+				headers.Add("header-key", Encoding.UTF8.GetBytes("header key value"));
 
 
-			_bus = new BusBuilder().Configure(ctx => ctx
-														.Publish<TestMessage>()
-														.WithExchange(SpecId, cfg => cfg.Headers()))
-														.Build();
-			_bus.Connect();
-			_queue = new RabbitQueue("localhost", SpecId, ExchangeType.Headers, SpecId, false, true, false, true, "", headers);
-			_bus.Publish(new TestMessage("test"), headers);
-		};
+				_bus = new BusBuilder().Configure(ctx => ctx
+				                                         	.Publish<TestMessage>()
+				                                         	.WithExchange(SpecId, cfg => cfg.Headers()))
+					.Build();
+				_bus.Connect();
+				_queue = new RabbitQueue("localhost", SpecId, ExchangeType.Headers, SpecId, false, true, false, true, "", headers);
+				_bus.Publish(new TestMessage("test"), headers);
+			};
+
+		Cleanup after = () =>
+			{
+				_bus.Close();
+				_queue.Delete().Close();
+			};
 
 		Because of = () => new Action(() => _messageProperties = _queue.GetMessageProperties<TestMessage>()).ExecuteUntil(
-				() => _messageProperties != null)();
+			() => _messageProperties != null)();
 
 		It should_publish_the_message_with_headers = () => _messageProperties.Headers.Keys.ShouldContain("header-key");
 	}
@@ -212,29 +210,32 @@ namespace RabbitBus.Specs.Integration
 		static Bus _bus;
 
 		Establish context = () =>
-		{
-			var headers = new Dictionary<string, object>();
-			headers.Add("header-key", Encoding.UTF8.GetBytes("header key value"));
+			{
+				var headers = new Dictionary<string, object>();
+				headers.Add("header-key", Encoding.UTF8.GetBytes("header key value"));
 
 
-			_bus = new BusBuilder().Configure(ctx => ctx
-																								.Publish<RequestMessage>()
-																								.WithExchange(SpecId)
-																								.WithDefaultHeaders(headers))
-				.Build();
-			_bus.Connect();
-			_queue = new RabbitQueue(SpecId, SpecId);
-			_bus.Publish<RequestMessage, ReplyMessage>(new RequestMessage("test"), mc => { /* This will never get called because there's no server */ });
-		};
+				_bus = new BusBuilder().Configure(ctx => ctx
+				                                         	.Publish<RequestMessage>()
+				                                         	.WithExchange(SpecId)
+				                                         	.WithDefaultHeaders(headers))
+					.Build();
+				_bus.Connect();
+				_queue = new RabbitQueue(SpecId, SpecId);
+				_bus.Publish<RequestMessage, ReplyMessage>(new RequestMessage("test"), mc =>
+					{
+						/* This will never get called because there's no server */
+					});
+			};
 
 		Cleanup after = () =>
-		{
-			_bus.Close();
-			_queue.Delete().Close();
-		};
+			{
+				_bus.Close();
+				_queue.Delete().Close();
+			};
 
 		Because of = () => new Action(() => _messageProperties = _queue.GetMessageProperties<RequestMessage>())
-												.ExecuteUntil(() => _messageProperties != null)();
+		                   	.ExecuteUntil(() => _messageProperties != null)();
 
 		It should_publish_the_message_with_headers = () => _messageProperties.Headers.Keys.ShouldContain("header-key");
 	}

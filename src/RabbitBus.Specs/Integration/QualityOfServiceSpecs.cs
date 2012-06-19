@@ -11,7 +11,6 @@ namespace RabbitBus.Specs.Integration
 	public class when_setting_the_quality_of_service
 	{
 		const string SpecId = "7759CCD4-EA56-4EBF-8489-FDA0BC2B4796";
-		static int _messagesReceived;
 		static Bus _bus1;
 		static Bus _bus2;
 		static RabbitExchange _exchange;

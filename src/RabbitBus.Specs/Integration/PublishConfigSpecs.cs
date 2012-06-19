@@ -13,23 +13,23 @@ namespace RabbitBus.Specs.Integration
 		public const string QueueName = "TestMessage";
 		static RabbitQueue _queue;
 		static string _expectedMessage;
-		static Bus _subject;
+		static Bus _bus;
 
 		Establish context = () =>
 			{
 				_queue = new RabbitQueue("localhost", ExchangeName, ExchangeType.Direct, QueueName);
 				_expectedMessage = ExchangeName;
-				_subject = new BusBuilder().Build();
-				_subject.Connect();
+				_bus = new Bus();
+				_bus.Connect();
 			};
 
 		Cleanup after = () =>
 			{
-				_subject.Close();
+				_bus.Close();
 				_queue.Delete().Close();
 			};
 
-		Because of = () => _subject.Publish(new TestMessage(_expectedMessage));
+		Because of = () => _bus.Publish(new TestMessage(_expectedMessage));
 
 		It should_publish_the_message_with_the_default_registration_conventions =
 			() => _queue.GetMessage<TestMessage>().Text.ShouldEqual(_expectedMessage);

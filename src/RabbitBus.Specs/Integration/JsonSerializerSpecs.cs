@@ -11,7 +11,6 @@ namespace RabbitBus.Specs.Integration
 	public class when_serializating_with_the_json_serializer
 	{
 		const string SpecId = "DFE0545B-C280-47E4-A565-1EBD48ED25F0";
-		static int _deliveryMode;
 		static RabbitQueue _queue;
 		static IBasicProperties _properties;
 		static Bus _bus;

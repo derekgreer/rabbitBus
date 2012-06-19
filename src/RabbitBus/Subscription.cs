@@ -109,14 +109,14 @@ namespace RabbitBus
 									break;
 								}
 							}
-							catch (EndOfStreamException e)
+							catch (EndOfStreamException)
 							{
 								_channel.Dispose();
 								_channel = null;
 								logger.Write("Subscription terminated.", TraceEventType.Information);
 								break;
 							}
-							catch (ThreadAbortException e)
+							catch (ThreadAbortException)
 							{
 								Logger.Current.Write("The subscription thread was aborted.", TraceEventType.Error);
 							}

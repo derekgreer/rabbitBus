@@ -57,7 +57,6 @@ namespace RabbitBus.Specs.Integration
 	{
 		const string SpecId = "331791CA-ACAB-4BB1-9C22-CDB7711E8FA6";
 		static RabbitQueue _rabbitQueue;
-		static TestMessage _actualMessage;
 		static Bus _bus;
 		static ExpectedObject _expectedMessage;
 		static JsonSerializationStrategy _serializationStrategy;

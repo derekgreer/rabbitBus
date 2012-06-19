@@ -46,7 +46,6 @@ namespace RabbitBus.Specs.Integration
 	[Subject(typeof (BusBuilder))]
 	public class when_configuring_a_published_message_with_an_encoding_strategy
 	{
-		static string _exchangeType;
 		static IPublishConfigurationContext _publishConfigurationContext;
 
 		Establish context = () =>

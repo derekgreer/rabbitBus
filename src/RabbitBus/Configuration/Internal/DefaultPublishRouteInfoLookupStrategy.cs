@@ -2,7 +2,7 @@ using System;
 
 namespace RabbitBus.Configuration.Internal
 {
-	class DefaultPublicationRouteInfoLookupStrategy : IRouteInfoLookupStrategy<IPublishInfo>
+	class DefaultPublishRouteInfoLookupStrategy : IRouteInfoLookupStrategy<IPublishInfo>
 	{
 		public void Register(Type messageType, IPublishInfo routeInfo)
 		{

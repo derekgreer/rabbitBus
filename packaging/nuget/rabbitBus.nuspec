@@ -5,6 +5,8 @@
     <version>0.0.0</version>
     <authors>Derek Greer</authors>
     <owners>Derek Greer</owners>
+    <licenseUrl>https://raw.github.com/derekgreer/rabbitBus/master/LICENSE.txt</licenseUrl>
+    <projectUrl>http://github.com/derekgreer/rabbitBus</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>RabbitMQ client library.</description>
     <tags>RabbitBus RabbitMQ Client AMQP Queue,Bus</tags>

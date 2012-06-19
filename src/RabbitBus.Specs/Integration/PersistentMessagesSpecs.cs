@@ -1,6 +1,5 @@
 ﻿using Machine.Specifications;
 using RabbitBus.Configuration;
-using RabbitBus.Configuration.Internal;
 using RabbitBus.Specs.Infrastructure;
 using RabbitBus.Specs.TestTypes;
 using RabbitMQ.Client;
@@ -12,16 +11,9 @@ namespace RabbitBus.Specs.Integration
 	public class when_configuring_a_message_to_be_persistent
 	{
 		const string SpecId = "FB49868F-C862-40F7-A018-666866003789";
-		static int _deliveryMode;
 		static RabbitQueue _queue;
 		static IBasicProperties _message;
 		static Bus _bus;
-
-		Cleanup after = () =>
-			{
-				_bus.Close();
-				_queue.Delete().Close();
-			};
 
 		Establish context = () =>
 			{
@@ -29,6 +21,12 @@ namespace RabbitBus.Specs.Integration
 				_bus.Connect();
 				_queue = new RabbitQueue(SpecId, SpecId);
 				_bus.Publish(new TestMessage("test"));
+			};
+
+		Cleanup after = () =>
+			{
+				_bus.Close();
+				_queue.Delete().Close();
 			};
 
 		Because of = () => _message = _queue.GetMessageProperties<TestMessage>(new BinarySerializationStrategy());

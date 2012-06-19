@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using RabbitBus.Configuration;
 using RabbitBus.Configuration.Internal;
 using RabbitMQ.Client;
@@ -52,6 +53,12 @@ namespace RabbitBus.Utilities
 		public QueueBuilder WithConnection(string amqpUri)
 		{
 			_uri = amqpUri;
+			return this;
+		}
+
+		public QueueBuilder WithHeaders(Dictionary<string, object> headers)
+		{
+			_headers = headers;
 			return this;
 		}
 	}

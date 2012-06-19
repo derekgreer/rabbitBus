@@ -18,7 +18,10 @@ namespace RabbitBus.Specs.Integration
 
 		Establish context = () =>
 			{
-				_bus = new BusBuilder().Configure(ctx => ctx.WithLogger(new ConsoleLogger()).Publish<TestMessage>().WithExchange(SpecId, cfg => cfg.Fanout())).Build();
+				_bus = new BusBuilder().Configure(ctx => ctx.WithLogger(new ConsoleLogger())
+				                                         	.Publish<TestMessage>()
+				                                         	.WithExchange(SpecId, cfg => cfg.Fanout()))
+					.Build();
 				_bus.Connect();
 				_rabbitQueue = new RabbitQueue("localhost", SpecId, ExchangeType.Fanout, SpecId);
 			};

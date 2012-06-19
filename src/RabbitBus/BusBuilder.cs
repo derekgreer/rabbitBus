@@ -12,7 +12,7 @@ namespace RabbitBus
 		{
 			_configurationContext = new ConfigurationContext();
 		}
-		
+
 		public Bus Build()
 		{
 			return new Bus(_configurationContext.ConfigurationModel);
@@ -21,6 +21,13 @@ namespace RabbitBus
 		public BusBuilder Configure(Action<IConfigurationContext> action)
 		{
 			action(_configurationContext);
+			return this;
+		}
+
+		public BusBuilder Configure(IAutoConfigurationModel autoConfigurationModel)
+		{
+			var autoConfigurator = new AutoConfigurator();
+			autoConfigurator.Configure(_configurationContext.ConfigurationModel, autoConfigurationModel);
 			return this;
 		}
 	}

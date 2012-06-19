@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using RabbitBus.Configuration;
+using RabbitBus.Configuration.Internal;
 using RabbitBus.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -21,6 +22,11 @@ namespace RabbitBus
 		ConnectionFactory _connectionFactory;
 		bool _disposed;
 		IMessagePublisher _messagePublisher;
+
+		public Bus() : this(new ConfigurationModel())
+		{
+			
+		}
 
 		public Bus(IConfigurationModel configurationModel)
 		{
@@ -99,14 +105,9 @@ namespace RabbitBus
 		{
 			foreach (AutoSubscription autoSubscription in configurationModel.AutoSubscriptions)
 			{
-				object messageHandler = Activator.CreateInstance(autoSubscription.MessageHandlerType);
-				Type messageContext = typeof (IMessageContext<>).MakeGenericType(autoSubscription.MessageType);
-				Type action = typeof (Action<>).MakeGenericType(messageContext);
-				Delegate handler = Delegate.CreateDelegate(action, messageHandler, "Handle");
-				MethodInfo openSubscribeMessage = typeof (Bus).GetMethod("SubscribeMessage",
-				                                                         BindingFlags.Instance | BindingFlags.NonPublic);
-				MethodInfo closedSubscribedMessage = openSubscribeMessage.MakeGenericMethod(new[] {autoSubscription.MessageType});
-				closedSubscribedMessage.Invoke(this, new[] {handler, null, null});
+				MethodInfo openSubscribeMessage = typeof(Bus).GetMethod("SubscribeMessage", BindingFlags.Instance | BindingFlags.NonPublic);
+				MethodInfo closedSubscribedMessage = openSubscribeMessage.MakeGenericMethod(new[] { autoSubscription.MessageType });
+				closedSubscribedMessage.Invoke(this, new[] { autoSubscription.MessageHandler, null, null });
 			}
 		}
 
@@ -147,7 +148,7 @@ namespace RabbitBus
 			                     	};
 
 			_messagePublisher = new MessagePublisher(_connectionFactory.UserName,
-			                                         _configurationModel.PublicationRouteConfiguration,
+			                                         _configurationModel.PublishRouteConfiguration,
 			                                         _configurationModel.ConsumeRouteConfiguration,
 			                                         _configurationModel.DefaultSerializationStrategy,
 			                                         _configurationModel.ConnectionDownQueueStrategy);
@@ -212,7 +213,7 @@ namespace RabbitBus
 				TimeProvider.Current.Sleep(_configurationModel.ReconnectionInterval);
 				InitializeConnection(_connectionFactory);
 			}
-			catch (Exception e)
+			catch (Exception)
 			{
 				Logger.Current.Write("Connection failed.", TraceEventType.Information);
 			}

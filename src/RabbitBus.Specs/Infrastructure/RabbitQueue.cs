@@ -96,7 +96,7 @@ namespace RabbitBus.Specs.Infrastructure
 						var args = (BasicDeliverEventArgs) consumer.Queue.Dequeue();
 						message = serializationStrategy.Deserialize<TMessage>(args.Body);
 					}
-					catch (EndOfStreamException e)
+					catch (EndOfStreamException)
 					{
 					}
 				}).Background().BlockUntil(() => message != null).Then(() => _channel.Close())();
@@ -124,7 +124,7 @@ namespace RabbitBus.Specs.Infrastructure
 						args = (BasicDeliverEventArgs) consumer.Queue.Dequeue();
 						message = serializationStrategy.Deserialize<TMessage>(args.Body);
 					}
-					catch (EndOfStreamException e)
+					catch (EndOfStreamException)
 					{
 					}
 				}).Background().BlockUntil(() => message != null).Then(() => _channel.Close())();
@@ -160,7 +160,7 @@ namespace RabbitBus.Specs.Infrastructure
 			{
 				QueueDeclareOk queueDeclareOk = channel.QueueDeclarePassive(queueName);
 			}
-			catch (Exception e)
+			catch (Exception)
 			{
 				return false;
 			}

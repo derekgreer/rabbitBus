@@ -93,7 +93,6 @@ namespace RabbitBus.Specs.Integration
 		const string SpecId = "FD8A635E-0287-4D9E-8506-B0AC56A02641";
 		static Bus _bus;
 		static readonly TestMessage _actualMessage = new TestMessage("default");
-		static RabbitQueue _rabbitQueue;
 		static Exception _exception;
 
 		Establish context = () =>
@@ -129,7 +128,6 @@ namespace RabbitBus.Specs.Integration
 		const string SpecId = "BE95718E-A106-4DE0-A006-5B1F45A80389";
 		static Bus _publisher;
 		static TestMessage _actualMessage = new TestMessage("default");
-		static RabbitQueue _rabbitQueue;
 		static Bus _subscriber;
 
 		Establish context = () =>
@@ -192,9 +190,8 @@ namespace RabbitBus.Specs.Integration
 					                  	.WithConnectionUnavailableQueueStrategy(new MemoryQueueStrategy())
 					                  	.Publish<TestMessage>().WithExchange(SpecId, cfg => cfg.Not.AutoDelete().Durable())).Build();
 				_bus.Connect();
-
-				bool connectionRestablished = false;
-				_bus.ConnectionEstablished += (b, e) => { connectionRestablished = true; };
+				
+				_bus.ConnectionEstablished += (b, e) => { _connectionRestablished = true; };
 			};
 
 		Cleanup after = () => _bus.Close();

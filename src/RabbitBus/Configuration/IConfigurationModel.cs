@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
+using RabbitBus.Configuration.Internal;
 
 namespace RabbitBus.Configuration
 {
 	public interface IConfigurationModel
 	{
-		IRouteConfiguration<IPublishInfo> PublicationRouteConfiguration { get; set; }
+		IRouteConfiguration<IPublishInfo> PublishRouteConfiguration { get; set; }
 		IRouteConfiguration<IConsumeInfo> ConsumeRouteConfiguration { get; set; }
 		ISerializationStrategy DefaultSerializationStrategy { get; set; }
 		IDeadLetterStrategy DefaultDeadLetterStrategy { get; set; }

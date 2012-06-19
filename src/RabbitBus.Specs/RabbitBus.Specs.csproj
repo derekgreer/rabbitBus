@@ -69,10 +69,12 @@
     <Compile Include="Infrastructure\Parameter.cs" />
     <Compile Include="Infrastructure\RabbitHandlers.cs" />
     <Compile Include="Infrastructure\RabbitService.cs" />
-    <Compile Include="Infrastructure\TestSubscriptionConvention.cs" />
+    <Compile Include="Infrastructure\StatusUpdateHandler.cs" />
+    <Compile Include="Infrastructure\TestPublishConfigurationConvention.cs" />
+    <Compile Include="Infrastructure\NamedAutoMessageConsumeConfigurationConvention.cs" />
     <Compile Include="Infrastructure\Wait.cs" />
     <Compile Include="Integration\AcceptanceRequiredSpecs.cs" />
-    <Compile Include="Integration\AutoSubscriptionSpecs.cs" />
+    <Compile Include="Integration\ConventionConfigurationSpecs.cs" />
     <Compile Include="Integration\BinarySerializerSpecs.cs" />
     <Compile Include="Integration\ConnectionSpecs.cs" />
     <Compile Include="Integration\ConsumeConfigSpecs.cs" />
@@ -104,6 +106,7 @@
     <Compile Include="TestTypes\AutoMessage.cs" />
     <Compile Include="TestTypes\ReplyMessage.cs" />
     <Compile Include="TestTypes\RequestMessage.cs" />
+    <Compile Include="TestTypes\StatusUpdate.cs" />
     <Compile Include="TestTypes\TestMessage.cs" />
     <Compile Include="TestTypes\TestMessage2.cs" />
   </ItemGroup>

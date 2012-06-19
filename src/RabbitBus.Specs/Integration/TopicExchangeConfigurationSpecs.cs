@@ -11,7 +11,6 @@ namespace RabbitBus.Specs.Integration
 	[Subject("Topic Exchange")]
 	public class when_configuring_a_message_with_a_topic_exchange
 	{
-		static string _exchangeType;
 		static IPublishConfigurationContext _publishConfigurationContext;
 
 		Establish context = () => new BusBuilder()

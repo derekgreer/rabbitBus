@@ -17,7 +17,6 @@ namespace RabbitBus.Specs.Integration
 		const string QueueName = SpecId;
 		const string ExpectedMessage = SpecId;
 		static Bus _bus;
-		static TestMessage _actualMessage;
 		static RabbitExchange _exchange;
 		static IConsumerContext<TestMessage> _consumerContext;
 		static IMessageContext<TestMessage> _messageContext;
