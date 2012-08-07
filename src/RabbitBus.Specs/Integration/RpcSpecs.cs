@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using Machine.Specifications;
 using RabbitBus.Serialization.Json;
 using RabbitBus.Specs.Infrastructure;
@@ -16,12 +17,6 @@ namespace RabbitBus.Specs.Integration
 		static Bus _server;
 		static string _expectedCorrelationId = "unset";
 
-		Cleanup after = () =>
-			{
-				_client.Close();
-				_server.Close();
-			};
-
 		Establish context = () =>
 			{
 				_client = new BusBuilder()
@@ -29,7 +24,7 @@ namespace RabbitBus.Specs.Integration
 					                  	.WithLogger(new ConsoleLogger())
 					                  	.Publish<RequestMessage>()
 					                  	.WithExchange(SpecId)
-															.WithSerializationStrategy(new JsonSerializationStrategy())
+					                  	.WithSerializationStrategy(new JsonSerializationStrategy())
 					                  	.OnReplyError(x => { }))
 					.Build();
 				_client.Connect();
@@ -38,7 +33,7 @@ namespace RabbitBus.Specs.Integration
 					.Configure(ctx => ctx
 					                  	.WithLogger(new ConsoleLogger())
 					                  	.Consume<RequestMessage>()
-															.WithSerializationStrategy(new JsonSerializationStrategy())
+					                  	.WithSerializationStrategy(new JsonSerializationStrategy())
 					                  	.WithExchange(SpecId)
 					                  	.WithQueue(SpecId))
 					.Build();
@@ -52,17 +47,79 @@ namespace RabbitBus.Specs.Integration
 					});
 			};
 
-		Because of =
-			() =>
-			new Action(() => _client.Publish<RequestMessage, ReplyMessage>(new RequestMessage("text"), mc =>
-				{
-					_mc = mc;
-					mc.AcceptMessage();
-				})).
-				BlockUntil(() => _mc != null)();
+		Cleanup after = () =>
+			{
+				_client.Close();
+				_server.Close();
+			};
+
+		Because of = () =>
+		             new Action(() => _client.Publish<RequestMessage, ReplyMessage>(new RequestMessage("text"), mc =>
+		             	{
+		             		_mc = mc;
+		             		mc.AcceptMessage();
+		             	})).BlockUntil(() => _mc != null)();
 
 		It should_receive_the_expected_correlation_id = () => _mc.CorrelationId.ShouldEqual(_expectedCorrelationId);
 
 		It should_receive_the_response_message = () => _mc.Message.Text.ShouldEqual("reply");
+	}
+
+	[Integration]
+	[Subject("Remote Procedure Calls")]
+	public class when_making_a_remote_procedure_call_with_timeout
+	{
+		const string SpecId = "17F677FC-7C0B-4A83-B27E-5E1DE46279FB";
+		static Bus _client;
+		static Bus _server;
+		static IMessageContext<ReplyMessage> _mc;
+		static readonly TimeSpan Timeout = TimeSpan.FromSeconds(2);
+		static string _message = "timeout";
+
+		Establish context = () =>
+			{
+				_client = new BusBuilder()
+					.Configure(ctx => ctx
+					                  	.WithLogger(new ConsoleLogger())
+					                  	.Publish<RequestMessage>()
+					                  	.WithExchange(SpecId)
+					                  	.WithSerializationStrategy(new JsonSerializationStrategy())
+					                  	.OnReplyError(x => { }))
+					.Build();
+				_client.Connect();
+
+				_server = new BusBuilder()
+					.Configure(ctx => ctx
+					                  	.WithLogger(new ConsoleLogger())
+					                  	.Consume<RequestMessage>()
+					                  	.WithSerializationStrategy(new JsonSerializationStrategy())
+					                  	.WithExchange(SpecId)
+					                  	.WithQueue(SpecId))
+					.Build();
+				_server.Connect();
+
+				_server.Subscribe<RequestMessage>(ctx =>
+					{
+						Thread.Sleep(10000);
+						ctx.Reply(new ReplyMessage("reply"));
+						ctx.AcceptMessage();
+					});
+			};
+
+		Cleanup after = () =>
+			{
+				_client.Close();
+				_server.Close();
+			};
+
+		Because of = () =>
+		             new Action(() => _client.Publish<RequestMessage, ReplyMessage>(new RequestMessage("text"), mc =>
+		             	{
+		             		_mc = mc;
+		             		_message = mc.Message.Text;
+		             		mc.AcceptMessage();
+		             	}, Timeout)).BlockUntil(() => _mc != null)();
+
+		It should_timeout_after_the_specified_time = () => _message.ShouldNotEqual("reply");
 	}
 }

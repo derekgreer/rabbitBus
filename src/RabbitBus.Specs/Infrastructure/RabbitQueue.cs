@@ -48,6 +48,7 @@ namespace RabbitBus.Specs.Infrastructure
 			var connectionFactory = new ConnectionFactory {HostName = host};
 			_connection = connectionFactory.CreateConnection();
 			_channel = _connection.CreateModel();
+			_channel.ModelShutdown += new ModelShutdownEventHandler(_channel_ModelShutdown);
 
 			if (exchangeName != string.Empty)
 			{
@@ -59,6 +60,10 @@ namespace RabbitBus.Specs.Infrastructure
 			{
 				_channel.QueueDeclare(queueName, durableQueue, false, autoDeleteQueue, null);
 			}
+		}
+
+		void _channel_ModelShutdown(IModel model, ShutdownEventArgs reason)
+		{
 		}
 
 		public TMessage GetMessage<TMessage>() where TMessage : class
@@ -99,7 +104,7 @@ namespace RabbitBus.Specs.Infrastructure
 					catch (EndOfStreamException)
 					{
 					}
-				}).Background().BlockUntil(() => message != null).Then(() => _channel.Close())();
+				}).Background().BlockUntil(() => message != null)();
 
 			return message;
 		}
@@ -140,7 +145,7 @@ namespace RabbitBus.Specs.Infrastructure
 
 		public RabbitQueue Empty()
 		{
-			while (_channel.BasicGet(_queueName, true) != null) ;
+			while (_channel.BasicGet(_queueName, true) != null);
 			return this;
 		}
 

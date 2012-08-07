@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using RabbitBus.Logging;
 
 namespace RabbitBus.Specs.Infrastructure
@@ -7,7 +8,8 @@ namespace RabbitBus.Specs.Infrastructure
 	{
 		public void Write(LogEntry logEntry)
 		{
-			Console.WriteLine(string.Format("{0}:{1}", logEntry.Severity, logEntry.Message));
+			int id = Thread.CurrentThread.ManagedThreadId;
+			Console.WriteLine(string.Format("Thread Id:{0} -{1}:{2}", id, logEntry.Severity, logEntry.Message));
 		}
 	}
 }

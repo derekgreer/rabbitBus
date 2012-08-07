@@ -102,6 +102,7 @@
     <Compile Include="Configuration\PublishConfigurationConventionBase.cs" />
     <Compile Include="ConnectionUnavailableException.cs" />
     <Compile Include="ConsumerContext.cs" />
+    <Compile Include="ISubscription.cs" />
     <Compile Include="MemoryQueueStrategy.cs" />
     <Compile Include="ITimeProvider.cs" />
     <Compile Include="ThrowingQueueStrategy.cs" />

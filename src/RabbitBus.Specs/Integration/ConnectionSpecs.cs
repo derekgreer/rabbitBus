@@ -80,8 +80,7 @@ namespace RabbitBus.Specs.Integration
 				_rabbitQueue.Delete().Close();
 			};
 
-		Because of = () => new Action(() => _actualMessage = _rabbitQueue.GetMessage<TestMessage>()).BlockUntil(
-			() => _actualMessage.Text != "default")();
+		Because of = () => new Action(() => _actualMessage = _rabbitQueue.GetMessage<TestMessage>()).BlockUntil(() => _actualMessage.Text != "default")();
 
 		It should_publish_the_event_when_the_connection_is_restored = () => _actualMessage.Text.ShouldEqual("test");
 	}
@@ -90,7 +89,7 @@ namespace RabbitBus.Specs.Integration
 	[Subject("Connection interruption")]
 	public class when_publishing_an_event_when_the_connection_is_down_without_a_queuing_strategy_configured
 	{
-		const string SpecId = "FD8A635E-0287-4D9E-8506-B0AC56A02641";
+		const string SpecId = "8D43FE19-35FF-4B70-A9E9-65BF19725639";
 		static Bus _bus;
 		static readonly TestMessage _actualMessage = new TestMessage("default");
 		static Exception _exception;
@@ -114,6 +113,7 @@ namespace RabbitBus.Specs.Integration
 				Console.WriteLine("Cleaning up");
 				new RabbitService().Start();
 				_bus.Close();
+				new RabbitQueue("localhost", SpecId, ExchangeType.Direct, SpecId, true, false, true, false).Delete().Close();
 			};
 
 		Because of = () => _exception = Catch.Exception(() => _bus.Publish(new TestMessage("test")));
@@ -160,6 +160,7 @@ namespace RabbitBus.Specs.Integration
 			{
 				_publisher.Close();
 				_subscriber.Close();
+				new RabbitQueue("localhost", SpecId, ExchangeType.Direct, SpecId, true, false, true, false).Delete().Close();
 			};
 
 		It should_restore_functionality_to_both_the_publisher_and_the_subscriber =
@@ -194,7 +195,11 @@ namespace RabbitBus.Specs.Integration
 				_bus.ConnectionEstablished += (b, e) => { _connectionRestablished = true; };
 			};
 
-		Cleanup after = () => _bus.Close();
+		Cleanup after = () =>
+			{
+				new RabbitQueue("localhost", SpecId, ExchangeType.Direct, SpecId, true, false, true, false).Delete().Close();
+				_bus.Close();
+			};
 
 		Because of = () => new Action(() => new RabbitService().Restart()).BlockUntil(() => _connectionRestablished)();
 

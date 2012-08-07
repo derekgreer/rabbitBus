@@ -8,6 +8,7 @@ using RabbitBus.Configuration.Internal;
 using RabbitBus.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using RabbitMQ.Client.Impl;
 
 namespace RabbitBus
 {
@@ -25,7 +26,6 @@ namespace RabbitBus
 
 		public Bus() : this(new ConfigurationModel())
 		{
-			
 		}
 
 		public Bus(IConfigurationModel configurationModel)
@@ -48,7 +48,14 @@ namespace RabbitBus
 		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage,
 		                                                    Action<IMessageContext<TReplyMessage>> action)
 		{
-			PublishMessage(requestMessage, null, null, action);
+			PublishMessage(requestMessage, null, null, action, TimeSpan.MinValue);
+		}
+
+		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage,
+		                                                    Action<IMessageContext<TReplyMessage>> action,
+		                                                    TimeSpan callbackTimeout)
+		{
+			PublishMessage(requestMessage, null, null, action, callbackTimeout);
 		}
 
 		public void Publish<TMessage>(TMessage message, string routingKey)
@@ -105,9 +112,10 @@ namespace RabbitBus
 		{
 			foreach (AutoSubscription autoSubscription in configurationModel.AutoSubscriptions)
 			{
-				MethodInfo openSubscribeMessage = typeof(Bus).GetMethod("SubscribeMessage", BindingFlags.Instance | BindingFlags.NonPublic);
-				MethodInfo closedSubscribedMessage = openSubscribeMessage.MakeGenericMethod(new[] { autoSubscription.MessageType });
-				closedSubscribedMessage.Invoke(this, new[] { autoSubscription.MessageHandler, null, null });
+				MethodInfo openSubscribeMessage = typeof (Bus).GetMethod("SubscribeMessage",
+				                                                         BindingFlags.Instance | BindingFlags.NonPublic);
+				MethodInfo closedSubscribedMessage = openSubscribeMessage.MakeGenericMethod(new[] {autoSubscription.MessageType});
+				closedSubscribedMessage.Invoke(this, new[] {autoSubscription.MessageHandler, null, null});
 			}
 		}
 
@@ -125,9 +133,10 @@ namespace RabbitBus
 		}
 
 		void PublishMessage<TRequestMessage, TReplyMessage>(TRequestMessage message, string routingKey, IDictionary headers,
-		                                                    Action<IMessageContext<TReplyMessage>> replyAction)
+		                                                    Action<IMessageContext<TReplyMessage>> replyAction,
+		                                                    TimeSpan timeout)
 		{
-			_messagePublisher.Publish(message, routingKey, headers, replyAction);
+			_messagePublisher.Publish(message, routingKey, headers, replyAction, timeout);
 		}
 
 		void PublishMessage<TMessage>(TMessage message, string routingKey, IDictionary headers)
@@ -160,7 +169,11 @@ namespace RabbitBus
 		{
 			Logger.Current.Write("Initializing connection ...", TraceEventType.Information);
 			_connection = connectionFactory.CreateConnection();
-			_connection.ConnectionShutdown += UnexpectedConnectionShutdown;
+			// ------------------------------------------------------------------------------------------
+			// Closing/disposing channels on IConnection.ConnectionShutdown causes a deadlock, so
+			// the ISession.SessionShutdown event is used here to infer a connection shutdown. 
+			// ------------------------------------------------------------------------------------------
+			((ConnectionBase) _connection).m_session0.SessionShutdown += UnexpectedConnectionShutdown;
 			_connection.CallbackException += _connection_CallbackException;
 			_messagePublisher.SetConnection(_connection);
 			_configurationModel.DefaultDeadLetterStrategy.SetConnection(_connection);
@@ -174,10 +187,11 @@ namespace RabbitBus
 			OnConnectionEstablished(EventArgs.Empty);
 		}
 
-		void UnexpectedConnectionShutdown(IConnection connection, ShutdownEventArgs reason)
+		// kludge to work around a rabbitMQ API deadlock bug
+		void UnexpectedConnectionShutdown(ISession session, ShutdownEventArgs reason)
 		{
 			Logger.Current.Write("Connection was shut down.", TraceEventType.Information);
-			_connection.ConnectionShutdown -= UnexpectedConnectionShutdown;
+			((ConnectionBase) _connection).m_session0.SessionShutdown -= UnexpectedConnectionShutdown;
 
 			lock (_connectionLock)
 			{
@@ -204,18 +218,33 @@ namespace RabbitBus
 			Logger.Current.Write("Subscriptions have been renewed.", TraceEventType.Information);
 		}
 
+		void RemoveSubscriptions()
+		{
+			Logger.Current.Write("Removing subscriptions ...", TraceEventType.Information);
+
+			foreach (ISubscriptionKey key in new List<ISubscriptionKey>(_subscriptions.Keys))
+			{
+				_subscriptions[key].Stop();
+				_subscriptions.Remove(key);
+			}
+			Logger.Current.Write("Subscriptions have been removed.", TraceEventType.Information);
+		}
+
 		void Reconnect(TimeSpan timeSpan)
 		{
-			try
+			while (!_connection.IsOpen)
 			{
-				Logger.Current.Write(string.Format("Attempting reconnect with last known configuration in {0} seconds.",
-				                                   timeSpan.ToString("ss")), TraceEventType.Information);
-				TimeProvider.Current.Sleep(_configurationModel.ReconnectionInterval);
-				InitializeConnection(_connectionFactory);
-			}
-			catch (Exception)
-			{
-				Logger.Current.Write("Connection failed.", TraceEventType.Information);
+				try
+				{
+					Logger.Current.Write(string.Format("Attempting reconnect with last known configuration in {0} seconds.",
+					                                   timeSpan.ToString("ss")), TraceEventType.Information);
+					TimeProvider.Current.Sleep(_configurationModel.ReconnectionInterval);
+					InitializeConnection(_connectionFactory);
+				}
+				catch (Exception)
+				{
+					Logger.Current.Write("Connection failed.", TraceEventType.Information);
+				}
 			}
 		}
 
@@ -223,15 +252,19 @@ namespace RabbitBus
 		{
 			lock (_connectionLock)
 			{
-				_connection.ConnectionShutdown -= UnexpectedConnectionShutdown;
-				if (_connection != null && _connection.IsOpen)
+				if (_connection != null)
 				{
-					_connection.Close();
-					string message = string.Format("Disconnected from the RabbitMQ node on host:{0}, port:{1}.",
-					                               _connection.Endpoint.HostName, _connection.Endpoint.Port);
-					Logger.Current.Write(new LogEntry {Message = message});
+					((ConnectionBase) _connection).m_session0.SessionShutdown -= UnexpectedConnectionShutdown;
+					if (_connection != null && _connection.IsOpen)
+					{
+						_connection.Close();
+						RemoveSubscriptions();
+						string message = string.Format("Disconnected from the RabbitMQ node on host:{0}, port:{1}.",
+						                               _connection.Endpoint.HostName, _connection.Endpoint.Port);
+						Logger.Current.Write(new LogEntry {Message = message});
+					}
+					_closed = true;
 				}
-				_closed = true;
 			}
 		}
 
@@ -241,7 +274,7 @@ namespace RabbitBus
 			var subscription = new Subscription<TMessage>(_connection, _configurationModel.DefaultDeadLetterStrategy,
 			                                              _configurationModel.DefaultSerializationStrategy,
 			                                              routeInfo, routingKey, action, arguments, _defaultErrorCallback,
-			                                              _messagePublisher, SubscriptionType.Subscription);
+			                                              _messagePublisher, SubscriptionType.Subscription, TimeSpan.MinValue);
 			_subscriptions.Add(new SubscriptionKey(typeof (TMessage), routingKey, arguments), subscription);
 			subscription.Start();
 		}

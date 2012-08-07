@@ -56,12 +56,11 @@ namespace RabbitBus
 			}
 		}
 
-		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage message, string routingKey, IDictionary headers,
-		                                                    Action<IMessageContext<TReplyMessage>> replyAction)
+		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage message, string routingKey, IDictionary headers, Action<IMessageContext<TReplyMessage>> replyAction, TimeSpan timeout)
 		{
 			try
 			{
-				PublishMessage(message, routingKey, headers, replyAction);
+				PublishMessage(message, routingKey, headers, replyAction, timeout);
 			}
 			catch (Exception e)
 			{
@@ -169,8 +168,7 @@ namespace RabbitBus
 			return messageHeaders;
 		}
 
-		void PublishMessage<TRequestMessage, TReplyMessage>(TRequestMessage message, string routingKey, IDictionary headers,
-		                                                    Action<IMessageContext<TReplyMessage>> replyAction)
+		void PublishMessage<TRequestMessage, TReplyMessage>(TRequestMessage message, string routingKey, IDictionary headers, Action<IMessageContext<TReplyMessage>> replyAction, TimeSpan timeout)
 		{
 			IPublishInfo publishInfo = _publishRouteConfiguration.GetRouteInfo(typeof (TRequestMessage));
 			IModel channel = _connection.CreateModel();
@@ -228,8 +226,9 @@ namespace RabbitBus
 			                                               replyAction,
 			                                               null,
 			                                               x => { },
-			                                               this, SubscriptionType.RemoteProcedure
-			               	).Start()).Start();
+			                                               this,
+																										 SubscriptionType.RemoteProcedure,
+																										 timeout).Start()).Start();
 
 
 			channel.BasicPublish(publishInfo.ExchangeName, routingKey ?? publishInfo.DefaultRoutingKey, properties, bytes);

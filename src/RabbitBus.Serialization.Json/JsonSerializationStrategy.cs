@@ -30,7 +30,6 @@ namespace RabbitBus.Serialization.Json
 			}
 			catch (Exception e)
 			{
-				Console.WriteLine(e);
 				var error = "An error occurred attempting to serialize the provided message: " + e.Message;
 				Logger.Current.Write(new LogEntry {Message = error, Severity = TraceEventType.Error});
 				throw new SerializationException(error, e);
@@ -46,7 +45,6 @@ namespace RabbitBus.Serialization.Json
 			}
 			catch (Exception e)
 			{
-				Console.WriteLine(e);
 				var error = "An error occurred attempting to deserialize the provided data: " + e.Message;
 				Logger.Current.Write(new LogEntry {Message = error, Severity = TraceEventType.Error});
 				throw new SerializationException(error, e);

@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Diagnostics;
 using RabbitBus.Configuration;
 using RabbitBus.Configuration.Internal;
+using RabbitBus.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Framing.v0_9_1;
 
@@ -68,16 +70,30 @@ namespace RabbitBus
 
 		public void AcceptMessage()
 		{
-			_channel.BasicAck(Id, false);
+			try
+			{
+				_channel.BasicAck(Id, false);
+			}
+			catch (Exception e)
+			{
+				Logger.Current.Write("An exception occurred accepting the message: " + e.Message, TraceEventType.Information);
+			}
 		}
 
 		public void RejectMessage(bool requeue)
 		{
-			if (!requeue)
+			try
 			{
-				_deadLetterStrategy.Publish(_basicProperties, _body);
+				if (!requeue)
+				{
+					_deadLetterStrategy.Publish(_basicProperties, _body);
+				}
+				_channel.BasicNack(Id, false, requeue);
 			}
-			_channel.BasicNack(Id, false, requeue);
+			catch (Exception e)
+			{
+				Logger.Current.Write("An exception occurred rejecting the message: " + e.Message, TraceEventType.Information);
+			}
 		}
 
 		public void Reply<TReplyMessage>(TReplyMessage responseMessage)

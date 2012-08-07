@@ -68,13 +68,16 @@ namespace RabbitBus.Specs.Integration
 
 				_bus = new BusBuilder().Configure(ctx =>
 					{
+						ctx.WithLogger(new ConsoleLogger());
 						ctx.WithDefaultSerializationStrategy(new ErrorSerializationStrategy());
 						ctx.Consume<TestMessage>().WithExchange(SpecId, cfg => cfg.Fanout().Durable().Not.AutoDelete())
 							.WithQueue(SpecId, cfg => cfg.Durable().Not.AutoDelete())
 							.OnError(errorContext =>
 								{
+									Console.WriteLine("OnError callback");
 									errorContext.RejectMessage(false);
-									_bus.Close();
+									Console.WriteLine("Calling Close() ...");
+									//_bus.Close();
 									_callbackInvoked = true;
 								});
 					}).Build();
@@ -87,8 +90,8 @@ namespace RabbitBus.Specs.Integration
 			{
 				_bus.Close();
 				new RabbitDeadLetterQueue().Empty().Close();
-				_rabbitQueue.Delete().Close();
 				_rabbitExchange.Delete().Close();
+				_rabbitQueue.Delete().Close();
 			};
 
 		Because of = () => new Action(() => _rabbitExchange.Publish(new TestMessage(ExpectedMessage))).BlockUntil(() => _callbackInvoked)();
@@ -117,7 +120,6 @@ namespace RabbitBus.Specs.Integration
 							if (e.Message.Contains("exception"))
 							{
 								_logMessageWritten = true;
-								_bus.Close();
 							}
 						});
 
@@ -141,9 +143,10 @@ namespace RabbitBus.Specs.Integration
 
 		Cleanup after = () =>
 			{
+				_bus.Close();
+				_deadLetterQueue.Empty().Close();
 				_rabbitExchange.Delete().Close();
 				_rabbitQueue.Delete().Close();
-				_deadLetterQueue.Empty().Close();
 			};
 
 		Because of =
