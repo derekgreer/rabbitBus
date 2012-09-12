@@ -5,7 +5,7 @@ namespace RabbitBus.Specs.Infrastructure
 {
 	public static class Wait
 	{
-		const int Timeout = 30;
+		const int Timeout = 15;
 
 		public static void Until(Func<bool> predicate)
 		{

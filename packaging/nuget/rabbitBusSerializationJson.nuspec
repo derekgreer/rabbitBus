@@ -10,7 +10,7 @@
     <tags>RabbitBus RabbitMQ Client AMQP Queue Bus JSON</tags>
 	<dependencies>
 		<dependency id="RabbitBus" version="" />
-		<dependency id="Newtonsoft.Json" version="4.5.3" />
+		<dependency id="Newtonsoft.Json" version="[4.5.9,5.0)" />
 	</dependencies>
   </metadata>
   <files>

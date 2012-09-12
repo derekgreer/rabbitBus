@@ -9,7 +9,7 @@ namespace RabbitBus.Specs.Infrastructure
 		public void Write(LogEntry logEntry)
 		{
 			int id = Thread.CurrentThread.ManagedThreadId;
-			Console.WriteLine(string.Format("Thread Id:{0} -{1}:{2}", id, logEntry.Severity, logEntry.Message));
+			Console.WriteLine(string.Format("Thread Id:{0} [{1}] - {2}", id, logEntry.Severity, logEntry.Message));
 		}
 	}
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using Machine.Specifications;
 using Moq;
 using RabbitBus.Specs.Infrastructure;
@@ -8,6 +9,39 @@ using It = Machine.Specifications.It;
 
 namespace RabbitBus.Specs.Integration
 {
+	[Integration]
+	[Subject("Connection unavailable")]
+	public class when__the_broker_is_unavailable
+	{
+		static Bus _bus;
+		static bool _connectionEstablished;
+		static RabbitService _service;
+		static bool _connectionFailed;
+
+		Establish context = () =>
+			{
+				_service = new RabbitService();
+				_service.Stop();
+
+				_bus = new BusBuilder().Configure(ctx => ctx.WithLogger(new ConsoleLogger())).Build();
+				_bus.ConnectionEstablished += (sender, e) => { _connectionEstablished = true; };
+				_bus.ConnectionFailed += (sender, e) => { _connectionFailed = true; };
+				new Thread(() => _bus.Connect()).Start();
+				Wait.Until(() => _connectionFailed);
+			};
+
+
+		Cleanup after = () =>
+			{
+				_bus.Close();
+				_service.Start();
+			};
+
+		Because of = () => new Action(() => _service.Start()).BlockUntil(() => _connectionEstablished)();
+
+		It should_connect_when_the_broker_becomes_available = () => _connectionEstablished.ShouldBeTrue();
+	}
+
 	[Integration]
 	[Subject("Connection interruption")]
 	public class when_the_connection_is_restarted
@@ -80,7 +114,10 @@ namespace RabbitBus.Specs.Integration
 				_rabbitQueue.Delete().Close();
 			};
 
-		Because of = () => new Action(() => _actualMessage = _rabbitQueue.GetMessage<TestMessage>()).BlockUntil(() => _actualMessage.Text != "default")();
+		Because of =
+			() =>
+			new Action(() => _actualMessage = _rabbitQueue.GetMessage<TestMessage>()).BlockUntil(
+				() => _actualMessage.Text != "default")();
 
 		It should_publish_the_event_when_the_connection_is_restored = () => _actualMessage.Text.ShouldEqual("test");
 	}
@@ -187,11 +224,11 @@ namespace RabbitBus.Specs.Integration
 				_bus = new BusBuilder()
 					.Configure(ctx => ctx
 					                  	.WithLogger(new ConsoleLogger())
-															.WithReconnectionAttemptInterval(TimeSpan.FromSeconds(5))
+					                  	.WithReconnectionAttemptInterval(TimeSpan.FromSeconds(5))
 					                  	.WithConnectionUnavailableQueueStrategy(new MemoryQueueStrategy())
 					                  	.Publish<TestMessage>().WithExchange(SpecId, cfg => cfg.Not.AutoDelete().Durable())).Build();
 				_bus.Connect();
-				
+
 				_bus.ConnectionEstablished += (b, e) => { _connectionRestablished = true; };
 			};
 
@@ -203,6 +240,7 @@ namespace RabbitBus.Specs.Integration
 
 		Because of = () => new Action(() => new RabbitService().Restart()).BlockUntil(() => _connectionRestablished)();
 
-		It should_reconnect_using_the_configured_timeout = () => _mockTimeProvider.Verify(x => x.Sleep(TimeSpan.FromSeconds(5)));
+		It should_reconnect_using_the_configured_timeout =
+			() => _mockTimeProvider.Verify(x => x.Sleep(TimeSpan.FromSeconds(5)));
 	}
 }

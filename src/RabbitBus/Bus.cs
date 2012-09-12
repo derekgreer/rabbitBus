@@ -8,6 +8,7 @@ using RabbitBus.Configuration.Internal;
 using RabbitBus.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using RabbitMQ.Client.Exceptions;
 using RabbitMQ.Client.Impl;
 
 namespace RabbitBus
@@ -149,11 +150,20 @@ namespace RabbitBus
 			Connect("amqp://guest:guest@localhost:5672/%2f");
 		}
 
-		public void Connect(string ampqUri)
+		public void Connect(string amqpUri)
 		{
+			Connect(amqpUri, TimeSpan.FromSeconds(30));
+		}
+
+		public void Connect(string amqpUri, TimeSpan timeout)
+		{
+			var amqpTcpEndpoint = new AmqpTcpEndpoint(new Uri(amqpUri));
+
+			Logger.Current.Write(string.Format("Establishing connection to host:{0}, port:{1}",
+				amqpTcpEndpoint.HostName, amqpTcpEndpoint.Port), TraceEventType.Information);
 			_connectionFactory = new ConnectionFactory
 			                     	{
-			                     		Uri = ampqUri
+			                     		Uri = amqpUri
 			                     	};
 
 			_messagePublisher = new MessagePublisher(_connectionFactory.UserName,
@@ -161,33 +171,62 @@ namespace RabbitBus
 			                                         _configurationModel.ConsumeRouteConfiguration,
 			                                         _configurationModel.DefaultSerializationStrategy,
 			                                         _configurationModel.ConnectionDownQueueStrategy);
-			InitializeConnection(_connectionFactory);
+			InitializeConnection(_connectionFactory, timeout);
 			RegisterAutoSubscriptions(_configurationModel);
 		}
-
-		void InitializeConnection(ConnectionFactory connectionFactory)
+		
+		void InitializeConnection(ConnectionFactory connectionFactory, TimeSpan timeout)
 		{
-			Logger.Current.Write("Initializing connection ...", TraceEventType.Information);
-			_connection = connectionFactory.CreateConnection();
-			// ------------------------------------------------------------------------------------------
-			// Closing/disposing channels on IConnection.ConnectionShutdown causes a deadlock, so
-			// the ISession.SessionShutdown event is used here to infer a connection shutdown. 
-			// ------------------------------------------------------------------------------------------
-			((ConnectionBase) _connection).m_session0.SessionShutdown += UnexpectedConnectionShutdown;
-			_connection.CallbackException += _connection_CallbackException;
-			_messagePublisher.SetConnection(_connection);
-			_configurationModel.DefaultDeadLetterStrategy.SetConnection(_connection);
+			var timeoutInterval = TimeSpan.FromSeconds(10);
+			IConnection connection = null;
+			var stopwatch = new Stopwatch();
+			stopwatch.Start();
 
-			Logger.Current.Write(new LogEntry
-			                     	{
-			                     		Message = string.Format("Connected to the RabbitMQ node on host:{0}, port:{1}.",
-			                     		                        _connection.Endpoint.HostName, _connection.Endpoint.Port)
-			                     	});
+			while(connection == null)
+			{
+				Logger.Current.Write("Initializing connection ...", TraceEventType.Information);
 
-			OnConnectionEstablished(EventArgs.Empty);
+				try
+				{
+					connection = connectionFactory.CreateConnection();
+					// ------------------------------------------------------------------------------------------
+					// Closing/disposing channels on IConnection.ConnectionShutdown causes a deadlock, so
+					// the ISession.SessionShutdown event is used here to infer a connection shutdown. 
+					// ------------------------------------------------------------------------------------------
+					((ConnectionBase) connection).m_session0.SessionShutdown += UnexpectedConnectionShutdown;
+					connection.CallbackException += ConnectionCallbackException;
+					_messagePublisher.SetConnection(connection);
+					_configurationModel.DefaultDeadLetterStrategy.SetConnection(connection);
+
+					Logger.Current.Write(new LogEntry
+					                     	{
+					                     		Message = string.Format("Connected to the RabbitMQ node on host:{0}, port:{1}.",
+					                     		                        connection.Endpoint.HostName, connection.Endpoint.Port)
+					                     	});
+
+					_connection = connection;
+					OnConnectionEstablished(EventArgs.Empty);
+				}
+				catch (BrokerUnreachableException e)
+				{
+					OnConnectionFailed(EventArgs.Empty);
+					Logger.Current.Write(string.Format("The connection initialization failed because the RabbitMQ broker was unavailable. Reattempting connection in {0} seconds.",
+						timeoutInterval.Seconds), TraceEventType.Warning);
+					TimeProvider.Current.Sleep(timeoutInterval);
+				}
+
+				if(stopwatch.Elapsed > timeout)
+				{
+					break;
+				}
+			}
+
+			if(connection == null)
+			{
+				Logger.Current.Write("A connection to the RabbitMQ broker could not be established within the allotted time frame", TraceEventType.Critical);
+			}
 		}
 
-		// kludge to work around a rabbitMQ API deadlock bug
 		void UnexpectedConnectionShutdown(ISession session, ShutdownEventArgs reason)
 		{
 			Logger.Current.Write("Connection was shut down.", TraceEventType.Information);
@@ -202,7 +241,7 @@ namespace RabbitBus
 			}
 		}
 
-		void _connection_CallbackException(object sender, CallbackExceptionEventArgs e)
+		void ConnectionCallbackException(object sender, CallbackExceptionEventArgs e)
 		{
 			Logger.Current.Write("CallbackException received: " + e.Exception.Message, TraceEventType.Information);
 		}
@@ -239,7 +278,7 @@ namespace RabbitBus
 					Logger.Current.Write(string.Format("Attempting reconnect with last known configuration in {0} seconds.",
 					                                   timeSpan.ToString("ss")), TraceEventType.Information);
 					TimeProvider.Current.Sleep(_configurationModel.ReconnectionInterval);
-					InitializeConnection(_connectionFactory);
+					InitializeConnection(_connectionFactory, TimeSpan.MinValue);
 				}
 				catch (Exception)
 				{
@@ -286,9 +325,17 @@ namespace RabbitBus
 
 		public event EventHandler ConnectionEstablished;
 
-		public void OnConnectionEstablished(EventArgs e)
+		protected void OnConnectionEstablished(EventArgs e)
 		{
 			EventHandler handler = ConnectionEstablished;
+			if (handler != null) handler(this, e);
+		}
+
+		public event EventHandler ConnectionFailed;
+
+		protected void OnConnectionFailed(EventArgs e)
+		{
+			EventHandler handler = ConnectionFailed;
 			if (handler != null) handler(this, e);
 		}
 
