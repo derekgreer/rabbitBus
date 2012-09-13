@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Specialized;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using RabbitBus.Configuration;
 using RabbitBus.Configuration.Internal;
 using RabbitBus.Logging;
@@ -94,7 +93,7 @@ namespace RabbitBus
 			{
 				channel.ExchangeDeclare(publicationAddress.ExchangeName, publicationAddress.ExchangeType, false, true, null);
 			}
-			IConsumeInfo consumeInfo = _consumeRouteConfiguration.GetRouteInfo(typeof(TRequestMessage));
+			IConsumeInfo consumeInfo = _consumeRouteConfiguration.GetRouteInfo(typeof (TRequestMessage));
 			ISerializationStrategy serializationStrategy = consumeInfo.SerializationStrategy ?? _defaultSerializationStrategy;
 			byte[] bytes = serializationStrategy.Serialize(replyMessage);
 			channel.BasicPublish(publicationAddress, replyProperties, bytes);
@@ -166,18 +165,19 @@ namespace RabbitBus
 					IConsumeInfo consumeInfo = CloneConsumeInfo(replyInfo);
 					consumeInfo.ExchangeName = "";
 					consumeInfo.QueueName = queueName;
+					consumeInfo.Exclusive = true;
 
-					new Task(() => new Subscription<TReplyMessage>(_connection,
-					                                               new DefaultDeadLetterStrategy(),
-					                                               serializationStrategy,
-					                                               consumeInfo,
-					                                               queueName /* routing key */,
-					                                               replyAction,
-					                                               null,
-					                                               x => { },
-					                                               this,
-					                                               SubscriptionType.RemoteProcedure,
-					                                               timeout).Start()).Start();
+					new Subscription<TReplyMessage>(_connection,
+					                                new DefaultDeadLetterStrategy(),
+					                                serializationStrategy,
+					                                consumeInfo,
+					                                queueName /* routing key */,
+					                                replyAction,
+					                                null,
+					                                x => { },
+					                                this,
+					                                SubscriptionType.RemoteProcedure,
+					                                timeout).Start();
 				});
 		}
 

@@ -55,7 +55,7 @@ namespace RabbitBus
 			{
 				ILogger logger = Logger.Current;
 				IModel channel = _connection.CreateModel();
-				channel.ModelShutdown += new ModelShutdownEventHandler(channel_ModelShutdown);
+				channel.ModelShutdown += channel_ModelShutdown;
 
 				if (_consumeInfo.ExchangeName != string.Empty)
 				{

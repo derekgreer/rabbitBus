@@ -4,6 +4,7 @@ using Machine.Specifications;
 using RabbitBus.Serialization.Json;
 using RabbitBus.Specs.Infrastructure;
 using RabbitBus.Specs.TestTypes;
+using RabbitMQ.Client;
 
 namespace RabbitBus.Specs.Integration
 {
@@ -59,6 +60,65 @@ namespace RabbitBus.Specs.Integration
 		             		_mc = mc;
 		             		mc.AcceptMessage();
 		             	})).BlockUntil(() => _mc != null)();
+
+		It should_receive_the_expected_correlation_id = () => _mc.CorrelationId.ShouldEqual(_expectedCorrelationId);
+
+		It should_receive_the_response_message = () => _mc.Message.Text.ShouldEqual("reply");
+	}
+
+	[Integration]
+	[Subject("Remote Procedure Calls")]
+	public class when_publishing_remote_procedure_call_requests_to_a_persistent_durable_exchange
+	{
+		const string SpecId = "2A2550E6-2159-473A-8B41-65D73F09DB78";
+		static IMessageContext<ReplyMessage> _mc;
+		static Bus _client;
+		static Bus _server;
+		static string _expectedCorrelationId = "unset";
+
+		Establish context = () =>
+		{
+			_client = new BusBuilder()
+				.Configure(ctx => ctx
+														.WithLogger(new ConsoleLogger())
+														.Publish<RequestMessage>()
+														.WithExchange(SpecId, cfg => cfg.Fanout().Not.AutoDelete().Durable())
+														.WithSerializationStrategy(new JsonSerializationStrategy())
+														.OnReplyError(x => { }))
+				.Build();
+			_client.Connect();
+
+			_server = new BusBuilder()
+				.Configure(ctx => ctx
+														.WithLogger(new ConsoleLogger())
+														.Consume<RequestMessage>()
+														.WithSerializationStrategy(new JsonSerializationStrategy())
+														.WithExchange(SpecId, cfg => cfg.Fanout().Not.AutoDelete().Durable())
+														.WithQueue(SpecId, cfg => cfg.Not.AutoDelete().Durable()))
+				.Build();
+			_server.Connect();
+
+			_server.Subscribe<RequestMessage>(ctx =>
+			{
+				_expectedCorrelationId = ctx.CorrelationId;
+				ctx.Reply(new ReplyMessage("reply"));
+				ctx.AcceptMessage();
+			});
+		};
+
+		Cleanup after = () =>
+		{
+			_client.Close();
+			_server.Close();
+			new RabbitExchange("localhost", SpecId, ExchangeType.Fanout, true, false).Delete(false).Close();
+		};
+
+		Because of = () =>
+								 new Action(() => _client.Publish<RequestMessage, ReplyMessage>(new RequestMessage("text"), mc =>
+								 {
+									 _mc = mc;
+									 mc.AcceptMessage();
+								 })).BlockUntil(() => _mc != null)();
 
 		It should_receive_the_expected_correlation_id = () => _mc.CorrelationId.ShouldEqual(_expectedCorrelationId);
 
