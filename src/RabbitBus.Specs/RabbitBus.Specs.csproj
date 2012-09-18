@@ -109,6 +109,7 @@
     <Compile Include="TestTypes\StatusUpdate.cs" />
     <Compile Include="TestTypes\TestMessage.cs" />
     <Compile Include="TestTypes\TestMessage2.cs" />
+    <Compile Include="TestTypes\TestMessageWithProtectedTypes.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RabbitBus.Serialization.Json\RabbitBus.Serialization.Json.csproj">

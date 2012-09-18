@@ -1,10 +1,11 @@
 using System;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using RabbitBus.Configuration;
-using RabbitBus.Configuration.Internal;
 using RabbitBus.Logging;
 
 namespace RabbitBus.Serialization.Json
@@ -30,7 +31,7 @@ namespace RabbitBus.Serialization.Json
 			}
 			catch (Exception e)
 			{
-				var error = "An error occurred attempting to serialize the provided message: " + e.Message;
+				string error = "An error occurred attempting to serialize the provided message: " + e.Message;
 				Logger.Current.Write(new LogEntry {Message = error, Severity = TraceEventType.Error});
 				throw new SerializationException(error, e);
 			}
@@ -40,15 +41,27 @@ namespace RabbitBus.Serialization.Json
 		{
 			try
 			{
-				var message = Encoding.UTF8.GetString(bytes);
-				return JsonConvert.DeserializeObject<T>(message);
+				string message = Encoding.UTF8.GetString(bytes);
+				return JsonConvert.DeserializeObject<T>(message, GetJsonSettings());
 			}
 			catch (Exception e)
 			{
-				var error = "An error occurred attempting to deserialize the provided data: " + e.Message;
+				string error = "An error occurred attempting to deserialize the provided data: " + e.Message;
 				Logger.Current.Write(new LogEntry {Message = error, Severity = TraceEventType.Error});
 				throw new SerializationException(error, e);
 			}
+		}
+
+		JsonSerializerSettings GetJsonSettings()
+		{
+			return new JsonSerializerSettings
+			       	{
+			       		ContractResolver = new DefaultContractResolver
+			       		                   	{
+			       		                   		DefaultMembersSearchFlags =
+			       		                   			BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance
+			       		                   	}
+			       	};
 		}
 	}
 }

@@ -10,6 +10,6 @@ namespace RabbitBus.Specs.TestTypes
 			Text = expectedMessage;
 		}
 
-		public string Text { get; set; }
+		public string Text { get; protected set; }
 	}
 }
