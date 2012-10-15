@@ -24,7 +24,7 @@ namespace RabbitBus.Configuration.Internal
 			{
 				if (convention.ShouldRegister(handlerType))
 				{
-					object handler = Activator.CreateInstance(handlerType);
+					object handler = autoConfigurationModel.DependencyResolver.Resolve(handlerType);
 					Type messageType = convention.GetMessageType(handler);
 					MethodInfo openGetMessageHandlerMethodInfo =
 						typeof (ISubscriptionConvention).GetMethod("GetMessageHandler", BindingFlags.Instance | BindingFlags.Public);
@@ -36,16 +36,14 @@ namespace RabbitBus.Configuration.Internal
 			}
 		}
 
-		void ConfigurePublish(IConfigurationModel configurationModel, IAutoConfigurationModel autoConfigurationModel,
-		                      Type type)
+		void ConfigurePublish(IConfigurationModel configurationModel, IAutoConfigurationModel autoConfigurationModel, Type type)
 		{
 			foreach (IPublishConfigurationConvention convention in autoConfigurationModel.PublishConfigurationConventions)
 			{
 				if (convention.ShouldRegister(type))
 				{
 					PublishInfo publishInfo = GetPublishInfo(type, convention);
-					configurationModel.PublishRouteConfiguration.AddPolicy<MappingRouteInfoLookupStrategy<IPublishInfo>>(type,
-					                                                                                                     publishInfo);
+					configurationModel.PublishRouteConfiguration.AddPolicy<MappingRouteInfoLookupStrategy<IPublishInfo>>(type, publishInfo);
 				}
 			}
 		}

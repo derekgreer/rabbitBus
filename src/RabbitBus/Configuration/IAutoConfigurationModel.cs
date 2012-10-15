@@ -9,5 +9,6 @@ namespace RabbitBus.Configuration
 		IEnumerable<IConsumeConfigurationConvention> ConsumeConfigurationConventions { get; set; }
 		IEnumerable<IPublishConfigurationConvention> PublishConfigurationConventions { get; set; }
 		IEnumerable<ISubscriptionConvention> SubscriptionConventions { get; set; }
+		IDependencyResolver DependencyResolver { get; set; }
 	}
 }

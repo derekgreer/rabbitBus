@@ -25,6 +25,7 @@ namespace RabbitBus.Specs.Integration
 					           	.WithAssembly(Assembly.GetExecutingAssembly())
 					           	.WithConsumeConfigurationConvention(new NamedAutoMessageConsumeConfigurationConvention(SpecId, SpecId))
 					           	.WithSubscriptionConvention(new MessageHandlerSubscrptionConvention())
+					           	.WithDependencyResolver(new TestDependencyResolver())
 					           	.Build())
 					.Build();
 				_bus.Connect();
@@ -36,9 +37,12 @@ namespace RabbitBus.Specs.Integration
 				_exchange.Close();
 			};
 
-		Because of = () => new Action(() => _exchange.Publish(new AutoMessage("test"))).BlockUntil(() => AutoMessageHandler.Message != null)();
+		Because of =
+			() =>
+			new Action(() => _exchange.Publish(new AutoMessage("test"))).BlockUntil(() => AutoMessageHandler.Message != null)();
 
-		It should_receive_the_message_when_published = () => AutoMessageHandler.Message.ProvideDefault().Text.ShouldEqual("test");
+		It should_receive_the_message_when_published =
+			() => AutoMessageHandler.Message.ProvideDefault().Text.ShouldEqual("test");
 	}
 
 	[Integration]
@@ -56,6 +60,7 @@ namespace RabbitBus.Specs.Integration
 					.Configure(new AutoConfigurationModelBuilder()
 					           	.WithAssembly(Assembly.GetExecutingAssembly())
 					           	.WithSubscriptionConvention(new MessageHandlerSubscrptionConvention())
+					           	.WithDependencyResolver(new TestDependencyResolver())
 					           	.Build())
 					.Build();
 				_bus.Connect();
@@ -67,7 +72,9 @@ namespace RabbitBus.Specs.Integration
 				_exchange.Close();
 			};
 
-		Because of = () => new Action(() => _exchange.Publish(new AutoMessage("test"))).BlockUntil(() => AutoMessageHandler.Message != null)();
+		Because of =
+			() =>
+			new Action(() => _exchange.Publish(new AutoMessage("test"))).BlockUntil(() => AutoMessageHandler.Message != null)();
 
 		It should_receive_the_message_when_published =
 			() => AutoMessageHandler.Message.ProvideDefault().Text.ShouldEqual("test");
@@ -81,29 +88,67 @@ namespace RabbitBus.Specs.Integration
 		static Bus _bus;
 
 		Establish context = () =>
-		{
-			_exchange = new RabbitExchange("localhost", "AutoMessage", ExchangeType.Direct, false, true);
+			{
+				_exchange = new RabbitExchange("localhost", "AutoMessage", ExchangeType.Direct, false, true);
 
-			_bus = new BusBuilder()
-				.Configure(new AutoConfigurationModelBuilder()
-										.WithCallingAssembly()
-										.WithSubscriptionConvention(new MessageHandlerSubscrptionConvention())
-										.Build())
-				.Build();
-			_bus.Connect();
-		};
+				_bus = new BusBuilder()
+					.Configure(new AutoConfigurationModelBuilder()
+					           	.WithCallingAssembly()
+					           	.WithSubscriptionConvention(new MessageHandlerSubscrptionConvention())
+					           	.WithDependencyResolver(new TestDependencyResolver())
+					           	.Build())
+					.Build();
+				_bus.Connect();
+			};
 
 		Cleanup after = () =>
-		{
-			_bus.Close();
-			_exchange.Close();
-		};
+			{
+				_bus.Close();
+				_exchange.Close();
+			};
 
 		Because of =
 			() =>
 			new Action(() => _exchange.Publish(new AutoMessage("test"))).BlockUntil(() => AutoMessageHandler.Message != null)();
 
-		It should_receive_the_message_when_published = () => AutoMessageHandler.Message.ProvideDefault().Text.ShouldEqual("test");
+		It should_receive_the_message_when_published =
+			() => AutoMessageHandler.Message.ProvideDefault().Text.ShouldEqual("test");
+	}
+
+	[Integration]
+	[Subject("Convention configuration")]
+	public class when_subscribing_by_convention_with_handler_dependencies
+	{
+		static RabbitExchange _exchange;
+		static Bus _bus;
+
+		Establish context = () =>
+			{
+				_exchange = new RabbitExchange("localhost", "DependencyAutoMessage", ExchangeType.Direct, false, true);
+
+				_bus = new BusBuilder()
+					.Configure(new AutoConfigurationModelBuilder()
+					           	.WithCallingAssembly()
+					           	.WithSubscriptionConvention(new MessageHandlerSubscrptionConvention())
+					           	.WithDependencyResolver(new TestDependencyResolver())
+					           	.Build())
+					.Build();
+				_bus.Connect();
+			};
+
+		Cleanup after = () =>
+			{
+				_bus.Close();
+				_exchange.Close();
+			};
+
+		Because of =
+			() =>
+			new Action(() => _exchange.Publish(new DependencyAutoMessage("test"))).BlockUntil(
+				() => DependencyAutoMessageHandler.Message != null)();
+
+		It should_receive_the_message_when_published =
+			() => DependencyAutoMessageHandler.Message.ProvideDefault().Text.ShouldEqual("test");
 	}
 
 	[Integration]
@@ -114,27 +159,31 @@ namespace RabbitBus.Specs.Integration
 		static Bus _bus;
 
 		Establish context = () =>
-		{
-			_exchange = new RabbitExchange("localhost", "AutoMessage", ExchangeType.Direct, false, true);
+			{
+				_exchange = new RabbitExchange("localhost", "AutoMessage", ExchangeType.Direct, false, true);
 
-			_bus = new BusBuilder()
-				.Configure(new AutoConfigurationModelBuilder()
-										.WithCallingAssembly()
-										.WithDefaultConventions()
-										.Build())
-				.Build();
-			_bus.Connect();
-		};
+				_bus = new BusBuilder()
+					.Configure(new AutoConfigurationModelBuilder()
+					           	.WithCallingAssembly()
+					           	.WithDefaultConventions()
+					           	.WithDependencyResolver(new TestDependencyResolver())
+					           	.Build())
+					.Build();
+				_bus.Connect();
+			};
 
 		Cleanup after = () =>
-		{
-			_bus.Close();
-			_exchange.Close();
-		};
+			{
+				_bus.Close();
+				_exchange.Close();
+			};
 
-		Because of = () => new Action(() => _exchange.Publish(new AutoMessage("test"))).BlockUntil(() => AutoMessageHandler.Message != null)();
+		Because of =
+			() =>
+			new Action(() => _exchange.Publish(new AutoMessage("test"))).BlockUntil(() => AutoMessageHandler.Message != null)();
 
-		It should_receive_the_message_when_published = () => AutoMessageHandler.Message.ProvideDefault().Text.ShouldEqual("test");
+		It should_receive_the_message_when_published =
+			() => AutoMessageHandler.Message.ProvideDefault().Text.ShouldEqual("test");
 	}
 
 	[Integration]
@@ -149,10 +198,13 @@ namespace RabbitBus.Specs.Integration
 			{
 				_queue = new RabbitQueue("localhost", SpecId, ExchangeType.Direct, SpecId, false, true, false, true);
 
+				var builder = new BusBuilder();
+
 				_bus = new BusBuilder()
 					.Configure(new AutoConfigurationModelBuilder()
 					           	.WithAssembly(Assembly.GetExecutingAssembly())
 					           	.WithPublishConfigurationConvention(new TestPublishConfigurationConvention(SpecId))
+					           	.WithDependencyResolver(new TestDependencyResolver())
 					           	.Build())
 					.Build();
 				_bus.Connect();
@@ -166,7 +218,8 @@ namespace RabbitBus.Specs.Integration
 
 		Because of = () => _bus.Publish(new AutoMessage("test"));
 
-		It should_be_able_to_publish_messages_matching_convention = () => _queue.GetMessage<AutoMessage>().Text.ShouldEqual("test");
+		It should_be_able_to_publish_messages_matching_convention =
+			() => _queue.GetMessage<AutoMessage>().Text.ShouldEqual("test");
 	}
 
 	[Integration]
@@ -176,23 +229,22 @@ namespace RabbitBus.Specs.Integration
 		static Bus _bus;
 
 		Establish context = () =>
-		{
-			_bus = new BusBuilder()
-				.Configure(new AutoConfigurationModelBuilder()
-										.WithCallingAssembly()
-										.WithDefaultConventions()
-										.Build())
-				.Build();
-			_bus.Connect();
-		};
+			{
+				_bus = new BusBuilder()
+					.Configure(new AutoConfigurationModelBuilder()
+					           	.WithCallingAssembly()
+					           	.WithDefaultConventions()
+					           	.WithDependencyResolver(new TestDependencyResolver())
+					           	.Build())
+					.Build();
+				_bus.Connect();
+			};
 
-		Cleanup after = () =>
-		{
-			_bus.Close();
-		};
+		Cleanup after = () => { _bus.Close(); };
 
 		Because of = () => _bus.Publish(new AutoMessage("test"));
 
-		It should_be_able_to_publish_messages_matching_convention = () => AutoMessageHandler.Message.ProvideDefault().Text.ShouldEqual("test");
+		It should_be_able_to_publish_messages_matching_convention =
+			() => AutoMessageHandler.Message.ProvideDefault().Text.ShouldEqual("test");
 	}
 }

@@ -7,7 +7,6 @@ namespace RabbitBus.Specs.TestTypes
 	{
 		public AutoMessage()
 		{
-			
 		}
 
 		public AutoMessage(string text)

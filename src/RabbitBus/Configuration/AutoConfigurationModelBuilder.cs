@@ -8,11 +8,26 @@ namespace RabbitBus.Configuration
 	{
 		readonly IList<Assembly> _assemblies = new List<Assembly>();
 
-		readonly IList<IConsumeConfigurationConvention> _consumeConfigurationConventions = new List<IConsumeConfigurationConvention>();
+		readonly IList<IConsumeConfigurationConvention> _consumeConfigurationConventions =
+			new List<IConsumeConfigurationConvention>();
 
-		readonly IList<IPublishConfigurationConvention> _publishConfigurationConventions = new List<IPublishConfigurationConvention>();
+		readonly IList<IPublishConfigurationConvention> _publishConfigurationConventions =
+			new List<IPublishConfigurationConvention>();
 
 		readonly IList<ISubscriptionConvention> _subscriptionConventions = new List<ISubscriptionConvention>();
+		IDependencyResolver _dependencyResolver = new DefaultDependencyResolver();
+
+		public IAutoConfigurationModel Build()
+		{
+			return new AutoConfigurationModel
+			       	{
+			       		Assemblies = _assemblies,
+			       		ConsumeConfigurationConventions = _consumeConfigurationConventions,
+			       		PublishConfigurationConventions = _publishConfigurationConventions,
+			       		SubscriptionConventions = _subscriptionConventions,
+			       		DependencyResolver = _dependencyResolver
+			       	};
+		}
 
 		public AutoConfigurationModelBuilder WithAssembly(Assembly assembly)
 		{
@@ -26,13 +41,15 @@ namespace RabbitBus.Configuration
 			return this;
 		}
 
-		public AutoConfigurationModelBuilder WithPublishConfigurationConvention(IPublishConfigurationConvention publishConfigurationConvention)
+		public AutoConfigurationModelBuilder WithPublishConfigurationConvention(
+			IPublishConfigurationConvention publishConfigurationConvention)
 		{
 			_publishConfigurationConventions.Add(publishConfigurationConvention);
 			return this;
 		}
 
-		public AutoConfigurationModelBuilder WithConsumeConfigurationConvention(IConsumeConfigurationConvention consumeConfigurationConvention)
+		public AutoConfigurationModelBuilder WithConsumeConfigurationConvention(
+			IConsumeConfigurationConvention consumeConfigurationConvention)
 		{
 			_consumeConfigurationConventions.Add(consumeConfigurationConvention);
 			return this;
@@ -44,20 +61,15 @@ namespace RabbitBus.Configuration
 			return this;
 		}
 
-		public IAutoConfigurationModel Build()
-		{
-			return new AutoConfigurationModel
-			{
-				Assemblies = _assemblies,
-				ConsumeConfigurationConventions = _consumeConfigurationConventions,
-				PublishConfigurationConventions = _publishConfigurationConventions,
-				SubscriptionConventions = _subscriptionConventions
-			};
-		}
-
 		public AutoConfigurationModelBuilder WithDefaultConventions()
 		{
 			_subscriptionConventions.Add(new MessageHandlerSubscrptionConvention());
+			return this;
+		}
+
+		public AutoConfigurationModelBuilder WithDependencyResolver(IDependencyResolver dependencyResolver)
+		{
+			_dependencyResolver = dependencyResolver;
 			return this;
 		}
 	}

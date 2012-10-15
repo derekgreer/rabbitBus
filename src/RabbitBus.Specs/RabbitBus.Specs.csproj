@@ -61,6 +61,7 @@
     <Compile Include="Infrastructure\AutoMessageHandler.cs" />
     <Compile Include="Infrastructure\ByteExtensions.cs" />
     <Compile Include="Infrastructure\ConsoleLogger.cs" />
+    <Compile Include="Infrastructure\DependencyAutoMessageHandler.cs" />
     <Compile Include="Infrastructure\Enumerator.cs" />
     <Compile Include="Infrastructure\BusExtensions.cs" />
     <Compile Include="Infrastructure\ErrorSerializationStrategy.cs" />
@@ -70,6 +71,7 @@
     <Compile Include="Infrastructure\RabbitHandlers.cs" />
     <Compile Include="Infrastructure\RabbitService.cs" />
     <Compile Include="Infrastructure\StatusUpdateHandler.cs" />
+    <Compile Include="Infrastructure\TestDependencyResolver.cs" />
     <Compile Include="Infrastructure\TestPublishConfigurationConvention.cs" />
     <Compile Include="Infrastructure\NamedAutoMessageConsumeConfigurationConvention.cs" />
     <Compile Include="Infrastructure\Wait.cs" />
@@ -104,6 +106,7 @@
     <Compile Include="Infrastructure\RabbitExchange.cs" />
     <Compile Include="Infrastructure\RabbitQueue.cs" />
     <Compile Include="TestTypes\AutoMessage.cs" />
+    <Compile Include="TestTypes\DependencyAutoMessage.cs" />
     <Compile Include="TestTypes\ReplyMessage.cs" />
     <Compile Include="TestTypes\RequestMessage.cs" />
     <Compile Include="TestTypes\StatusUpdate.cs" />

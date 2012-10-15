@@ -33,7 +33,8 @@ end
 
 assemblyinfo :versioning do |asm|
 	asm.output_file = "src/CommonAssemblyInfo.cs"
-	asm.version = "#{VERSION}"
+	asm.version = "#{VERSION}".gsub(/-[a-zA-Z].*$/) {  }
+
 end
 
 task :clean do

@@ -9,7 +9,7 @@ namespace RabbitBus.Configuration
 		{
 			return
 				handlerType.GetInterfaces()
-				.Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof (IMessageHandler<>));
+					.Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof (IMessageHandler<>));
 		}
 
 		public Action<IMessageContext<TMessage>> GetMessageHandler<TMessage>(object handler)
