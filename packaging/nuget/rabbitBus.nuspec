@@ -11,7 +11,7 @@
     <description>RabbitMQ client library.</description>
     <tags>RabbitBus RabbitMQ Client AMQP Queue Bus</tags>
 	<dependencies>
-		<dependency id="RabbitMQ.Client" version="[2.8.6,4.0)" />
+		<dependency id="RabbitMQ.Client" version="[3.0.0,4.0)" />
 	</dependencies>
   </metadata>
   <files>
