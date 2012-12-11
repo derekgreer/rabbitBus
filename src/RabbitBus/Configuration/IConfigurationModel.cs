@@ -13,5 +13,6 @@ namespace RabbitBus.Configuration
 		IList<AutoSubscription> AutoSubscriptions { get; set; }
 		IQueueStrategy ConnectionDownQueueStrategy { get; set; }
 		TimeSpan ReconnectionInterval { get; set; }
+		TimeSpan ReconnectionTimeout { get; set; }
 	}
 }

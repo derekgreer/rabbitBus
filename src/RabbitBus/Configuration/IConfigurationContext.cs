@@ -13,5 +13,6 @@ namespace RabbitBus.Configuration
 		IConfigurationContext WithDeadLetterQueue(string queueName);
 		IConfigurationContext WithConnectionUnavailableQueueStrategy(IQueueStrategy queueStrategy);
 		IConfigurationContext WithReconnectionAttemptInterval(TimeSpan timeSpan);
+		IConfigurationContext WithReconnectionAttemptTimeout(TimeSpan timeSpan);
 	}
 }

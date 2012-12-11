@@ -63,5 +63,11 @@ namespace RabbitBus.Configuration.Internal
 			ConfigurationModel.ReconnectionInterval = timeSpan;
 			return this;
 		}
+
+		public IConfigurationContext WithReconnectionAttemptTimeout(TimeSpan timeSpan)
+		{
+			ConfigurationModel.ReconnectionTimeout = timeSpan;
+			return this;
+		}
 	}
 }

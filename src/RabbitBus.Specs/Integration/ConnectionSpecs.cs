@@ -206,7 +206,7 @@ namespace RabbitBus.Specs.Integration
 
 	[Integration]
 	[Subject("Connection interruption")]
-	public class when_configuring_a_reconnection_timeout_value
+	public class when_configuring_a_reconnection_attempt_interval
 	{
 		const string SpecId = "47E8BFC3-2317-44D6-A5CE-48C81E35C02F";
 		static Mock<ITimeProvider> _mockTimeProvider;
@@ -242,5 +242,46 @@ namespace RabbitBus.Specs.Integration
 
 		It should_reconnect_using_the_configured_timeout =
 			() => _mockTimeProvider.Verify(x => x.Sleep(TimeSpan.FromSeconds(5)));
+	}
+
+	[Integration]
+	[Subject("Connection interruption")]
+	public class when_configuring_a_reconnection_attempt_timeout_value
+	{
+		const string SpecId = "47E8BFC3-2317-44D6-A5CE-48C81E35C02F";
+		static Mock<ITimeProvider> _mockTimeProvider;
+		static Bus _bus;
+		static bool _connectionTimeout;
+
+		Establish context = () =>
+		{
+			_mockTimeProvider = new Mock<ITimeProvider>();
+
+			new RabbitQueue("localhost", SpecId, ExchangeType.Direct, SpecId, true, false, true, false).Close();
+
+			TimeProvider.SetCurrent(_mockTimeProvider.Object);
+
+			_bus = new BusBuilder()
+				.Configure(ctx => ctx
+														.WithLogger(new ConsoleLogger())
+														.WithReconnectionAttemptTimeout(TimeSpan.FromSeconds(5))
+														.WithConnectionUnavailableQueueStrategy(new MemoryQueueStrategy())
+														.Publish<TestMessage>().WithExchange(SpecId, cfg => cfg.Not.AutoDelete().Durable())).Build();
+			_bus.Connect();
+
+			_bus.ConnectionTimeout += (b, e) => { _connectionTimeout = true; };
+		};
+
+		Cleanup after = () =>
+		{
+			new RabbitService().Start();
+			new RabbitQueue("localhost", SpecId, ExchangeType.Direct, SpecId, true, false, true, false).Delete().Close();
+			_bus.Close();
+			
+		};
+
+		Because of = () => new Action(() => new RabbitService().Stop()).BlockUntil(() => _connectionTimeout)();
+
+		It should_reconnect_using_the_configured_timeout = () => _connectionTimeout.ShouldBeTrue();
 	}
 }

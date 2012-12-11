@@ -49,7 +49,6 @@ namespace RabbitBus.Specs.Integration
 		static RabbitQueue _queue;
 		static Bus _bus;
 		static TestMessage _message;
-		static JsonSerializerSettings _settings;
 
 		Establish context = () =>
 			{
@@ -81,7 +80,6 @@ namespace RabbitBus.Specs.Integration
 		static RabbitQueue _queue;
 		static Bus _bus;
 		static TestMessageWithProtectedTypes _message;
-		static JsonSerializerSettings _settings;
 
 		Establish context = () =>
 		{

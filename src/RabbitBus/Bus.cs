@@ -207,7 +207,7 @@ namespace RabbitBus
 					_connection = connection;
 					OnConnectionEstablished(EventArgs.Empty);
 				}
-				catch (BrokerUnreachableException e)
+				catch (BrokerUnreachableException)
 				{
 					OnConnectionFailed(EventArgs.Empty);
 					Logger.Current.Write(string.Format("The connection initialization failed because the RabbitMQ broker was unavailable. Reattempting connection in {0} seconds.",
@@ -235,9 +235,11 @@ namespace RabbitBus
 			lock (_connectionLock)
 			{
 				if (_closed) return;
-				Reconnect(TimeSpan.FromSeconds(10));
-				RenewSubscriptions(_subscriptions.Values);
-				_messagePublisher.Flush();
+				if(Reconnect(TimeSpan.FromSeconds(10)))
+				{
+					RenewSubscriptions(_subscriptions.Values);
+					_messagePublisher.Flush();
+				}
 			}
 		}
 
@@ -269,8 +271,11 @@ namespace RabbitBus
 			Logger.Current.Write("Subscriptions have been removed.", TraceEventType.Information);
 		}
 
-		void Reconnect(TimeSpan timeSpan)
+		bool Reconnect(TimeSpan timeSpan)
 		{
+			var stopwatch = new Stopwatch();
+			stopwatch.Start();
+
 			while (!_connection.IsOpen)
 			{
 				try
@@ -284,7 +289,16 @@ namespace RabbitBus
 				{
 					Logger.Current.Write("Connection failed.", TraceEventType.Information);
 				}
+
+				if(stopwatch.Elapsed > _configurationModel.ReconnectionTimeout)
+				{
+					Logger.Current.Write("Timeout elapsed for reconnection attempts.", TraceEventType.Error);
+					OnConnectionTimeout(EventArgs.Empty);
+					return false;
+				}
 			}
+
+			return true;
 		}
 
 		public void Close()
@@ -336,6 +350,14 @@ namespace RabbitBus
 		protected void OnConnectionFailed(EventArgs e)
 		{
 			EventHandler handler = ConnectionFailed;
+			if (handler != null) handler(this, e);
+		}
+
+		public event EventHandler ConnectionTimeout;
+
+		protected void OnConnectionTimeout(EventArgs e)
+		{
+			EventHandler handler = ConnectionTimeout;
 			if (handler != null) handler(this, e);
 		}
 

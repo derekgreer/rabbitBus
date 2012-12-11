@@ -15,10 +15,11 @@ namespace RabbitBus.Configuration.Internal
 			ConsumeRouteConfiguration.AddStrategy<MappingRouteInfoLookupStrategy<IConsumeInfo>>();
 			ConsumeRouteConfiguration.AddStrategy<DefaultConsumeRouteInfoLookupStrategy>();
 			DefaultSerializationStrategy = new BinarySerializationStrategy();
-			DefaultDeadLetterStrategy = new NullDeadLetterStrategy();	
+			DefaultDeadLetterStrategy = new NullDeadLetterStrategy();
 			AutoSubscriptions = new List<AutoSubscription>();
 			ConnectionDownQueueStrategy = new ThrowingQueueStrategy<ConnectionUnavailableException>();
 			ReconnectionInterval = TimeSpan.FromSeconds(10);
+			ReconnectionTimeout = TimeSpan.FromMinutes(60);
 		}
 
 		public IRouteConfiguration<IPublishInfo> PublishRouteConfiguration { get; set; }
@@ -28,5 +29,6 @@ namespace RabbitBus.Configuration.Internal
 		public IList<AutoSubscription> AutoSubscriptions { get; set; }
 		public IQueueStrategy ConnectionDownQueueStrategy { get; set; }
 		public TimeSpan ReconnectionInterval { get; set; }
+		public TimeSpan ReconnectionTimeout { get; set; }
 	}
 }
