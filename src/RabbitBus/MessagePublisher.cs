@@ -183,7 +183,7 @@ namespace RabbitBus
                     var consumeInfo = CloneConsumeInfo(replyInfo);
                     consumeInfo.ExchangeName = "";
                     consumeInfo.QueueName = queueName;
-                    consumeInfo.Exclusive = true;
+                    consumeInfo.Exclusive = true;                    
 
                     var sub = new Subscription<TReplyMessage>(_connection,
                                                               new DefaultDeadLetterStrategy(),

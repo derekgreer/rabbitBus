@@ -76,8 +76,8 @@ namespace RabbitBus
                     channel.QueueBind(_consumeInfo.QueueName, _consumeInfo.ExchangeName, _routingKey, _exchangeArguments);
                 }
 
-                _consumer = new QueueingBasicConsumer(channel);
-                channel.BasicQos(0, _consumeInfo.QualityOfService, false);
+                _consumer = new QueueingBasicConsumer(channel);                
+                channel.BasicQos(0, _consumeInfo.QualityOfService, false);                
                 channel.BasicConsume(_consumeInfo.QueueName, _consumeInfo.IsAutoAcknowledge, _consumer);
                 _task = new Task(() => Subscribe(channel));
                 _task.Start();
@@ -150,9 +150,8 @@ namespace RabbitBus
                 try
                 {
                     object eArgs;
-                    _consumer.Queue.Dequeue(1000, out eArgs);
-
-                    if (eArgs != null)
+                    
+                    if (_consumer.Queue.Dequeue(500, out eArgs))
                     {
                         eventArgs = (BasicDeliverEventArgs) eArgs;
                         logger.Write(string.Format("Message received: {0} bytes", eventArgs.Body.Length),
