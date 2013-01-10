@@ -194,8 +194,14 @@ namespace RabbitBus
                                                      _configurationModel.ConsumeRouteConfiguration,
                                                      _configurationModel.DefaultSerializationStrategy,
                                                      _configurationModel.ConnectionDownQueueStrategy);
+            _messagePublisher.Exception += MessagePublisherException;
             InitializeConnection(_connectionFactory, timeout);
             RegisterAutoSubscriptions(_configurationModel);
+        }
+
+        void MessagePublisherException(object sender, CallbackExceptionEventArgs e)
+        {
+            OnException(e);
         }
 
         void InitializeConnection(ConnectionFactory connectionFactory, TimeSpan timeout)

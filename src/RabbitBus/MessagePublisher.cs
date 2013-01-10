@@ -9,6 +9,7 @@ using RabbitBus.Configuration;
 using RabbitBus.Configuration.Internal;
 using RabbitBus.Logging;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Framing.v0_9_1;
 
 #endregion
@@ -104,12 +105,13 @@ namespace RabbitBus
                                                                  IBasicProperties replyProperties)
         {
             var channel = _connection.CreateModel();
+            channel.CallbackException += ChannelCallbackException;
             if (publicationAddress.ExchangeName != string.Empty)
             {
                 channel.ExchangeDeclare(publicationAddress.ExchangeName, publicationAddress.ExchangeType, false, true,
                                         null);
             }
-            var consumeInfo = _consumeRouteConfiguration.GetRouteInfo(typeof (TRequestMessage));
+            var consumeInfo = _consumeRouteConfiguration.GetRouteInfo(typeof(TRequestMessage));
             var serializationStrategy = consumeInfo.SerializationStrategy ?? _defaultSerializationStrategy;
             var bytes = serializationStrategy.Serialize(replyMessage);
             channel.BasicPublish(publicationAddress, replyProperties, bytes);
@@ -128,7 +130,8 @@ namespace RabbitBus
                                     Action<IBasicProperties, IPublishInfo> replyAction)
         {
             var publishInfo = _publishRouteConfiguration.GetRouteInfo(message.GetType());
-            var channel = _connection.CreateModel();            
+            var channel = _connection.CreateModel();
+            channel.CallbackException += ChannelCallbackException;
             if (publishInfo.ExchangeName != string.Empty)
             {
                 // only declare if not default exchange
@@ -150,7 +153,7 @@ namespace RabbitBus
 
             properties.SetPersistent(publishInfo.IsPersistent);
             properties.ContentType = serializationStrategy.ContentType;
-            properties.ContentEncoding = serializationStrategy.ContentEncoding;            
+            properties.ContentEncoding = serializationStrategy.ContentEncoding;
             if (publishInfo.IsSigned)
                 properties.UserId = _userName;
             properties.CorrelationId = Guid.NewGuid().ToString();
@@ -171,6 +174,11 @@ namespace RabbitBus
             Logger.Current.Write(log, TraceEventType.Information);
         }
 
+        void ChannelCallbackException(object sender, CallbackExceptionEventArgs e)
+        {
+            OnException(e);
+        }
+
         private void PublishMessage<TRequestMessage, TReplyMessage>(TRequestMessage message, string routingKey,
                                                                     IDictionary headers,
                                                                     Action<IMessageContext<TReplyMessage>> replyAction,
@@ -187,7 +195,7 @@ namespace RabbitBus
                     var consumeInfo = CloneConsumeInfo(replyInfo);
                     consumeInfo.ExchangeName = "";
                     consumeInfo.QueueName = queueName;
-                    consumeInfo.Exclusive = true;                    
+                    consumeInfo.Exclusive = true;
 
                     var sub = new Subscription<TReplyMessage>(_connection,
                                                               new DefaultDeadLetterStrategy(),
@@ -216,7 +224,7 @@ namespace RabbitBus
         {
             lock (_callbacksLock)
             {
-                _callbackSubscriptions.Remove((ISubscription) sender);
+                _callbackSubscriptions.Remove((ISubscription)sender);
             }
         }
 
@@ -260,6 +268,17 @@ namespace RabbitBus
                     ErrorCallback = consumeInfo.ErrorCallback,
                     QualityOfService = consumeInfo.QualityOfService
                 };
+        }
+
+        public event CallbackExceptionEventHandler Exception;
+
+        protected void OnException(CallbackExceptionEventArgs e)
+        {
+            CallbackExceptionEventHandler handler = Exception;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
         }
     }
 }
