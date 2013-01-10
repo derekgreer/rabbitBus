@@ -1,8 +1,10 @@
-﻿using System;
+﻿#region Usings
+
+using System;
 using System.Collections;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
+using System.Threading.Tasks;
 using RabbitBus.Configuration;
 using RabbitBus.Configuration.Internal;
 using RabbitBus.Logging;
@@ -10,25 +12,30 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
 
+#endregion
+
 namespace RabbitBus
 {
-    class Subscription<TMessage> : ISubscription
+    internal class Subscription<TMessage> : ISubscription
     {
-        readonly Action<IMessageContext<TMessage>> _callback;
-        readonly TimeSpan _callbackTimeout;
-        readonly IConsumeInfo _consumeInfo;
-        readonly IDeadLetterStrategy _deadLetterStrategy;
-        readonly Action<IErrorContext> _defaultErrorCallback;
-        readonly ISerializationStrategy _defaultSerializationStrategy;
-        readonly IDictionary _exchangeArguments;
-        readonly IMessagePublisher _messagePublisher;
-        readonly string _routingKey;
-        readonly Stopwatch _stopwatch = new Stopwatch();
-        readonly SubscriptionType _subscriptionType;
-        IConnection _connection;
-        QueueingBasicConsumer _consumer;
-        Thread _thread;
-        bool _threadCancelled;
+        private readonly Action<IMessageContext<TMessage>> _callback;
+        private readonly TimeSpan _callbackTimeout;
+        private readonly IConsumeInfo _consumeInfo;
+        private readonly IDeadLetterStrategy _deadLetterStrategy;
+        private readonly Action<IErrorContext> _defaultErrorCallback;
+        private readonly ISerializationStrategy _defaultSerializationStrategy;
+        private readonly IDictionary _exchangeArguments;
+        private readonly IMessagePublisher _messagePublisher;
+        private readonly string _routingKey;
+        private readonly Stopwatch _stopwatch = new Stopwatch();
+        private readonly SubscriptionType _subscriptionType;
+        private IConnection _connection;
+        private QueueingBasicConsumer _consumer;
+        private Task _task;
+        private bool _threadCancelled;
+
+
+        public event EventHandler Stopped;
 
         public Subscription(IConnection connection, IDeadLetterStrategy deadLetterStrategy,
                             ISerializationStrategy defaultSerializationStrategy, IConsumeInfo consumeInfo,
@@ -54,7 +61,7 @@ namespace RabbitBus
         {
             try
             {
-                IModel channel = _connection.CreateModel();
+                var channel = _connection.CreateModel();
                 channel.ModelShutdown += ChannelModelShutdown;
 
                 if (_consumeInfo.ExchangeName != string.Empty)
@@ -63,20 +70,19 @@ namespace RabbitBus
                                             _consumeInfo.IsExchangeDurable,
                                             _consumeInfo.IsExchangeAutoDelete, null);
                 }
-                channel.QueueDeclare(_consumeInfo.QueueName, _consumeInfo.IsQueueDurable, _consumeInfo.Exclusive,
-                                     _consumeInfo.IsQueueAutoDelete, _exchangeArguments);
+                channel.QueueDeclare(_consumeInfo.QueueName, _consumeInfo.IsQueueDurable, _consumeInfo.Exclusive, _consumeInfo.IsQueueAutoDelete, _exchangeArguments);
                 if (_consumeInfo.ExchangeName != string.Empty)
                 {
                     channel.QueueBind(_consumeInfo.QueueName, _consumeInfo.ExchangeName, _routingKey, _exchangeArguments);
                 }
 
-                _consumer = new QueueingBasicConsumer(channel);
-                channel.BasicQos(0, _consumeInfo.QualityOfService, false);
+                _consumer = new QueueingBasicConsumer(channel);                
+                channel.BasicQos(0, _consumeInfo.QualityOfService, false);                
                 channel.BasicConsume(_consumeInfo.QueueName, _consumeInfo.IsAutoAcknowledge, _consumer);
-                _thread = new Thread(() => Subscribe(channel));
-                _thread.Start();
+                _task = new Task(() => Subscribe(channel));
+                _task.Start();
 
-                string log =
+                var log =
                     string.Format(
                         "Subscribed to messages from host: {0}, port: {1}, exchange: {2}, queue: {3}, routingKey: {4}",
                         _connection.Endpoint.HostName,
@@ -95,7 +101,7 @@ namespace RabbitBus
 
         public void Stop()
         {
-            string log =
+            var log =
                 string.Format(
                     "Stopping subscription to messages from host: {0}, port: {1}, exchange: {2}, queue: {3}, routingKey: {4}",
                     _connection.Endpoint.HostName,
@@ -105,9 +111,9 @@ namespace RabbitBus
                     _routingKey);
             Logger.Current.Write(log, TraceEventType.Information);
             _threadCancelled = true;
-            _thread.Join();
+            _task.Wait();
             _threadCancelled = false;
-            _thread = null;
+            _task = null;
         }
 
         public void Renew(IConnection connection)
@@ -117,12 +123,12 @@ namespace RabbitBus
             Start();
         }
 
-        void Subscribe(IModel channel)
-        {
-            ILogger logger = Logger.Current;
-            _stopwatch.Start();
+        private void Subscribe(IModel channel)
+        {            
+            var logger = Logger.Current;
+            _stopwatch.Start();            
 
-            string log =
+            var log =
                 string.Format(
                     "Starting thread for subscription to messages from host: {0}, port: {1}, exchange: {2}, queue: {3}, routingKey: {4}",
                     _connection.Endpoint.HostName,
@@ -143,15 +149,15 @@ namespace RabbitBus
 
                 try
                 {
-                    object eArgs = null;
-                    _consumer.Queue.Dequeue(1000, out eArgs);
-
-                    if (eArgs != null)
+                    object eArgs;
+                    
+                    if (_consumer.Queue.Dequeue(500, out eArgs))
                     {
                         eventArgs = (BasicDeliverEventArgs) eArgs;
-                        logger.Write(string.Format("Message received: {0} bytes", eventArgs.Body.Length), TraceEventType.Information);
-                        ISerializationStrategy serializationStrategy = _consumeInfo.SerializationStrategy ??
-                                                                       _defaultSerializationStrategy;
+                        logger.Write(string.Format("Message received: {0} bytes", eventArgs.Body.Length),
+                                     TraceEventType.Information);
+                        var serializationStrategy = _consumeInfo.SerializationStrategy ??
+                                                    _defaultSerializationStrategy;
                         object message = serializationStrategy.Deserialize<TMessage>(eventArgs.Body);
 
                         var messageContext = new MessageContext<TMessage>(_deadLetterStrategy, (TMessage) message,
@@ -190,19 +196,33 @@ namespace RabbitBus
                 }
                 catch (AlreadyClosedException e)
                 {
-                    Logger.Current.Write(string.Format("An AlreadyClosedException occurred: {0} {1}", e.Message, e.StackTrace), TraceEventType.Error);
+                    Logger.Current.Write(
+                        string.Format("An AlreadyClosedException occurred: {0} {1}", e.Message, e.StackTrace),
+                        TraceEventType.Error);
                     InvokeErrorCallback(eventArgs, channel);
                     break;
                 }
                 catch (Exception e)
                 {
-                    Logger.Current.Write("An exception occurred while dequeuing a message: " + e.Message, TraceEventType.Error);
+                    Logger.Current.Write("An exception occurred while dequeuing a message: " + e.Message,
+                                         TraceEventType.Error);
                     InvokeErrorCallback(eventArgs, channel);
-                }
+                }                
+            }    
+        
+            // cleaning channel
+            if (channel!= null && channel.IsOpen)
+            {
+                channel.Close();
+            }
+
+            if (Stopped != null)
+            {
+                Stopped(this, new EventArgs());
             }
         }
 
-        void ChannelModelShutdown(IModel model, ShutdownEventArgs reason)
+        private void ChannelModelShutdown(IModel model, ShutdownEventArgs reason)
         {
             try
             {
@@ -217,11 +237,11 @@ namespace RabbitBus
             }
         }
 
-        void InvokeErrorCallback(BasicDeliverEventArgs eventArgs, IModel channel)
+        private void InvokeErrorCallback(BasicDeliverEventArgs eventArgs, IModel channel)
         {
             try
             {
-                Action<IErrorContext> errorCallback = _consumeInfo.ErrorCallback ?? _defaultErrorCallback;
+                var errorCallback = _consumeInfo.ErrorCallback ?? _defaultErrorCallback;
                 errorCallback(new ErrorContext(channel, eventArgs));
             }
             catch (Exception exception)
@@ -232,7 +252,7 @@ namespace RabbitBus
             }
         }
 
-        bool WaitExceeded()
+        private bool WaitExceeded()
         {
             if (_callbackTimeout == TimeSpan.MinValue)
             {
