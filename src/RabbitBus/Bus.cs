@@ -269,6 +269,8 @@ namespace RabbitBus
         void ConnectionCallbackException(object sender, CallbackExceptionEventArgs e)
         {
             Logger.Current.Write("CallbackException received: " + e.Exception.Message, TraceEventType.Information);
+
+            OnException(e);
         }
 
         void RenewSubscriptions(IEnumerable<ISubscription> subscriptions)
@@ -358,6 +360,17 @@ namespace RabbitBus
         static void OnConsumeError(IErrorContext errorContext)
         {
             errorContext.RejectMessage(false);
+        }
+
+        public event CallbackExceptionEventHandler Exception;
+
+        protected void OnException(CallbackExceptionEventArgs e)
+        {
+            CallbackExceptionEventHandler handler = Exception;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
         }
 
         public event EventHandler ConnectionEstablished;
