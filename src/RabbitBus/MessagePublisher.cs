@@ -105,7 +105,7 @@ namespace RabbitBus
                                                                  IBasicProperties replyProperties)
         {
             var channel = _connection.CreateModel();
-            channel.CallbackException += ChannelCallbackException;
+            channel.CallbackException += ChannelCallbackException;            
             if (publicationAddress.ExchangeName != string.Empty)
             {
                 channel.ExchangeDeclare(publicationAddress.ExchangeName, publicationAddress.ExchangeType, false, true,
