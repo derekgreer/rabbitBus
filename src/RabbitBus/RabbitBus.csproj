@@ -35,9 +35,6 @@
     <Reference Include="ExpectedObjects">
       <HintPath>..\..\lib\ExpectedObjects\lib\ExpectedObjects.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\lib\Newtonsoft.Json\lib\net40\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="RabbitMQ.Client">
       <HintPath>..\packages\RabbitMQ.Client.3.0.0\lib\net30\RabbitMQ.Client.dll</HintPath>
     </Reference>

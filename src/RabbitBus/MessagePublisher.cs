@@ -128,10 +128,14 @@ namespace RabbitBus
                                     Action<IBasicProperties, IPublishInfo> replyAction)
         {
             var publishInfo = _publishRouteConfiguration.GetRouteInfo(message.GetType());
-            var channel = _connection.CreateModel();
-            channel.ExchangeDeclare(publishInfo.ExchangeName, publishInfo.ExchangeType,
-                                    publishInfo.IsDurable,
-                                    publishInfo.IsAutoDelete, null);
+            var channel = _connection.CreateModel();            
+            if (publishInfo.ExchangeName != string.Empty)
+            {
+                // only declare if not default exchange
+                channel.ExchangeDeclare(publishInfo.ExchangeName, publishInfo.ExchangeType,
+                                        publishInfo.IsDurable,
+                                        publishInfo.IsAutoDelete, null);
+            }
             var serializationStrategy = publishInfo.SerializationStrategy ?? _defaultSerializationStrategy;
             var bytes = serializationStrategy.Serialize(message);
 
