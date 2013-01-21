@@ -27,13 +27,14 @@ namespace RabbitBus
 		                        IRouteConfiguration<IPublishInfo> publishRouteConfiguration,
 		                        IRouteConfiguration<IConsumeInfo> consumeRouteConfiguration,
 		                        ISerializationStrategy defaultSerializationStrategy,
-		                        IQueueStrategy queueStrategy)
+		                        IQueueStrategy queueStrategy, List<ISubscription> callbackSubscriptions)
 		{
 			_userName = userName;
 			_publishRouteConfiguration = publishRouteConfiguration;
 			_consumeRouteConfiguration = consumeRouteConfiguration;
 			_defaultSerializationStrategy = defaultSerializationStrategy;
 			_queueStrategy = queueStrategy;
+		    _callbackSubscriptions = callbackSubscriptions;
 		}
 
 		public void Flush()
