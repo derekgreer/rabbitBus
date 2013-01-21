@@ -20,6 +20,7 @@ namespace RabbitBus
 		void AcceptMessage();
 		void RejectMessage(bool requeue);
 		void Reply<TResponseMessage>(TResponseMessage responseMessage);
+        void Reply<TResponseMessage>(TResponseMessage responseMessage, int? expiration);
 	}
 
 	public class MessageContext<TMessage> : IMessageContext<TMessage>
@@ -106,6 +107,23 @@ namespace RabbitBus
 				_messagePublisher.PublishReply<TMessage, TReplyMessage>(publicationAddress, responseMessage, replyProperties);
 			}
 		}
+
+        public void Reply<TReplyMessage>(TReplyMessage responseMessage, int? expiration)
+        {
+            if (_basicProperties.ReplyTo != null)
+            {
+                PublicationAddress publicationAddress = PublicationAddress.Parse(_basicProperties.ReplyTo);
+                var replyProperties = new BasicProperties();
+                replyProperties.CorrelationId = _basicProperties.CorrelationId;
+                
+                if (expiration >= 0)
+                {
+                    replyProperties.Expiration = expiration.ToString();
+                }
+
+                _messagePublisher.PublishReply<TMessage, TReplyMessage>(publicationAddress, responseMessage, replyProperties);
+            }
+        }
 
 		public bool AcceptanceRequired
 		{

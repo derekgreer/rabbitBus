@@ -25,7 +25,8 @@ namespace RabbitBus
 		bool _disposed;
 		IMessagePublisher _messagePublisher;
 
-		public Bus() : this(new ConfigurationModel())
+		public Bus()
+			: this(new ConfigurationModel())
 		{
 		}
 
@@ -38,52 +39,92 @@ namespace RabbitBus
 
 		public void Publish<TMessage>(TMessage message)
 		{
-			PublishMessage(message, null, null);
+			PublishMessage(message, null, null, null);
 		}
 
 		public void Publish<TMessage>(TMessage message, IDictionary headers)
 		{
-			PublishMessage(message, null, headers);
+			PublishMessage(message, null, headers, null);
 		}
 
-		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage,
-		                                                    Action<IMessageContext<TReplyMessage>> action)
+		public void Publish<TMessage>(TMessage message, int? expiration)
 		{
-			PublishMessage(requestMessage, null, null, action, TimeSpan.MinValue);
+			PublishMessage(message, null, null, expiration);
 		}
 
-        public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, string routingKey, Action<IMessageContext<TReplyMessage>> action)
-        {
-            PublishMessage(requestMessage, routingKey, null, action, TimeSpan.MinValue);
-        }
-
-        public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, IDictionary headers, Action<IMessageContext<TReplyMessage>> action)
-        {
-            PublishMessage(requestMessage, null, headers, action, TimeSpan.MinValue);
-        }
-
-		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage,
-		                                                    Action<IMessageContext<TReplyMessage>> action,
-		                                                    TimeSpan callbackTimeout)
+		public void Publish<TMessage>(TMessage message, string routingKey, int? expiration)
 		{
-			PublishMessage(requestMessage, null, null, action, callbackTimeout);
+			PublishMessage(message, routingKey, null, expiration);
 		}
 
-        public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, string routingKey, Action<IMessageContext<TReplyMessage>> action,
-                                                            TimeSpan callbackTimeout)
-        {
-            PublishMessage(requestMessage, routingKey, null, action, callbackTimeout);
-        }
+		public void Publish<TMessage>(TMessage message, IDictionary headers, int? expiration)
+		{
+			PublishMessage(message, null, headers, expiration);
+		}
 
-        public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, IDictionary headers, Action<IMessageContext<TReplyMessage>> action,
-                                                            TimeSpan callbackTimeout)
-        {
-            PublishMessage(requestMessage, null, headers, action, callbackTimeout);
-        }
+		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, Action<IMessageContext<TReplyMessage>> action)
+		{
+			PublishMessage(requestMessage, null, null, null, action, TimeSpan.MinValue);
+		}
+
+		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, string routingKey, Action<IMessageContext<TReplyMessage>> action)
+		{
+			PublishMessage(requestMessage, routingKey, null, null, action, TimeSpan.MinValue);
+		}
+
+		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, IDictionary headers, Action<IMessageContext<TReplyMessage>> action)
+		{
+			PublishMessage(requestMessage, null, headers, null, action, TimeSpan.MinValue);
+		}
+
+		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, int? expiration, Action<IMessageContext<TReplyMessage>> action)
+		{
+			PublishMessage(requestMessage, null, null, expiration, action, TimeSpan.MinValue);
+		}
+
+		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, string routingKey, int? expiration, Action<IMessageContext<TReplyMessage>> action)
+		{
+			PublishMessage(requestMessage, routingKey, null, expiration, action, TimeSpan.MinValue);
+		}
+
+		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, IDictionary headers, int? expiration, Action<IMessageContext<TReplyMessage>> action)
+		{
+			PublishMessage(requestMessage, null, headers, expiration, action, TimeSpan.MinValue);
+		}
+
+		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, Action<IMessageContext<TReplyMessage>> action, TimeSpan callbackTimeout)
+		{
+			PublishMessage(requestMessage, null, null, null, action, callbackTimeout);
+		}
+
+		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, string routingKey, Action<IMessageContext<TReplyMessage>> action, TimeSpan callbackTimeout)
+		{
+			PublishMessage(requestMessage, routingKey, null, null, action, callbackTimeout);
+		}
+
+		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, IDictionary headers, Action<IMessageContext<TReplyMessage>> action, TimeSpan callbackTimeout)
+		{
+			PublishMessage(requestMessage, null, headers, null, action, callbackTimeout);
+		}
+
+		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, int? expiration, Action<IMessageContext<TReplyMessage>> action, TimeSpan callbackTimeout)
+		{
+			PublishMessage(requestMessage, null, null, expiration, action, callbackTimeout);
+		}
+
+		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, string routingKey, int? expiration, Action<IMessageContext<TReplyMessage>> action, TimeSpan callbackTimeout)
+		{
+			PublishMessage(requestMessage, routingKey, null, expiration, action, callbackTimeout);
+		}
+
+		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, IDictionary headers, int? expiration, Action<IMessageContext<TReplyMessage>> action, TimeSpan callbackTimeout)
+		{
+			PublishMessage(requestMessage, null, headers, expiration, action, callbackTimeout);
+		}
 
 		public void Publish<TMessage>(TMessage message, string routingKey)
 		{
-			PublishMessage(message, routingKey, null);
+			PublishMessage(message, routingKey, null, null);
 		}
 
 		public void Unsubscribe<TMessage>()
@@ -118,11 +159,11 @@ namespace RabbitBus
 
 		public IConsumerContext<TMessage> CreateConsumerContext<TMessage>()
 		{
-			Logger.Current.Write(new LogEntry {Message = "Creating ConsumerContext ...", Severity = TraceEventType.Information});
+			Logger.Current.Write(new LogEntry { Message = "Creating ConsumerContext ...", Severity = TraceEventType.Information });
 			return new ConsumerContext<TMessage>(_connection,
-			                                     _configurationModel.ConsumeRouteConfiguration.GetRouteInfo(typeof (TMessage)),
-			                                     _configurationModel.DefaultSerializationStrategy,
-			                                     _configurationModel.DefaultDeadLetterStrategy, _messagePublisher);
+												 _configurationModel.ConsumeRouteConfiguration.GetRouteInfo(typeof(TMessage)),
+												 _configurationModel.DefaultSerializationStrategy,
+												 _configurationModel.DefaultDeadLetterStrategy, _messagePublisher);
 		}
 
 		public void Dispose()
@@ -135,17 +176,17 @@ namespace RabbitBus
 		{
 			foreach (AutoSubscription autoSubscription in configurationModel.AutoSubscriptions)
 			{
-				MethodInfo openSubscribeMessage = typeof (Bus).GetMethod("SubscribeMessage",
-				                                                         BindingFlags.Instance | BindingFlags.NonPublic);
-				MethodInfo closedSubscribedMessage = openSubscribeMessage.MakeGenericMethod(new[] {autoSubscription.MessageType});
-				closedSubscribedMessage.Invoke(this, new[] {autoSubscription.MessageHandler, null, null});
+				MethodInfo openSubscribeMessage = typeof(Bus).GetMethod("SubscribeMessage",
+																		 BindingFlags.Instance | BindingFlags.NonPublic);
+				MethodInfo closedSubscribedMessage = openSubscribeMessage.MakeGenericMethod(new[] { autoSubscription.MessageType });
+				closedSubscribedMessage.Invoke(this, new[] { autoSubscription.MessageHandler, null, null });
 			}
 		}
 
 		void UnsubscribeMessage<TMessage>(string routingKey, IDictionary headers)
 		{
 			ISubscription subscription;
-			var key = new SubscriptionKey(typeof (TMessage), routingKey, headers);
+			var key = new SubscriptionKey(typeof(TMessage), routingKey, headers);
 			_subscriptions.TryGetValue(key, out subscription);
 
 			if (subscription != null)
@@ -155,16 +196,16 @@ namespace RabbitBus
 			}
 		}
 
-		void PublishMessage<TRequestMessage, TReplyMessage>(TRequestMessage message, string routingKey, IDictionary headers,
-		                                                    Action<IMessageContext<TReplyMessage>> replyAction,
-		                                                    TimeSpan timeout)
+		void PublishMessage<TRequestMessage, TReplyMessage>(TRequestMessage message, string routingKey, IDictionary headers, int? expiration,
+															Action<IMessageContext<TReplyMessage>> replyAction,
+															TimeSpan timeout)
 		{
-			_messagePublisher.Publish(message, routingKey, headers, replyAction, timeout);
+			_messagePublisher.Publish(message, routingKey, headers, expiration, replyAction, timeout);
 		}
 
-		void PublishMessage<TMessage>(TMessage message, string routingKey, IDictionary headers)
+		void PublishMessage<TMessage>(TMessage message, string routingKey, IDictionary headers, int? expiration)
 		{
-			_messagePublisher.Publish(message, routingKey, headers);
+			_messagePublisher.Publish(message, routingKey, headers, expiration);
 		}
 
 		public void Connect()
@@ -184,19 +225,19 @@ namespace RabbitBus
 			Logger.Current.Write(string.Format("Establishing connection to host:{0}, port:{1}",
 				amqpTcpEndpoint.HostName, amqpTcpEndpoint.Port), TraceEventType.Information);
 			_connectionFactory = new ConnectionFactory
-			                     	{
-			                     		Uri = amqpUri
-			                     	};
+									{
+										Uri = amqpUri
+									};
 
 			_messagePublisher = new MessagePublisher(_connectionFactory.UserName,
-			                                         _configurationModel.PublishRouteConfiguration,
-			                                         _configurationModel.ConsumeRouteConfiguration,
-			                                         _configurationModel.DefaultSerializationStrategy,
-			                                         _configurationModel.ConnectionDownQueueStrategy);
+													 _configurationModel.PublishRouteConfiguration,
+													 _configurationModel.ConsumeRouteConfiguration,
+													 _configurationModel.DefaultSerializationStrategy,
+													 _configurationModel.ConnectionDownQueueStrategy);
 			InitializeConnection(_connectionFactory, timeout);
 			RegisterAutoSubscriptions(_configurationModel);
 		}
-		
+
 		void InitializeConnection(ConnectionFactory connectionFactory, TimeSpan timeout)
 		{
 			var timeoutInterval = TimeSpan.FromSeconds(10);
@@ -204,7 +245,7 @@ namespace RabbitBus
 			var stopwatch = new Stopwatch();
 			stopwatch.Start();
 
-			while(connection == null)
+			while (connection == null)
 			{
 				Logger.Current.Write("Initializing connection ...", TraceEventType.Information);
 
@@ -215,16 +256,16 @@ namespace RabbitBus
 					// Closing/disposing channels on IConnection.ConnectionShutdown causes a deadlock, so
 					// the ISession.SessionShutdown event is used here to infer a connection shutdown. 
 					// ------------------------------------------------------------------------------------------
-					((ConnectionBase) connection).m_session0.SessionShutdown += UnexpectedConnectionShutdown;
+					((ConnectionBase)connection).m_session0.SessionShutdown += UnexpectedConnectionShutdown;
 					connection.CallbackException += ConnectionCallbackException;
 					_messagePublisher.SetConnection(connection);
 					_configurationModel.DefaultDeadLetterStrategy.SetConnection(connection);
 
 					Logger.Current.Write(new LogEntry
-					                     	{
-					                     		Message = string.Format("Connected to the RabbitMQ node on host:{0}, port:{1}.",
-					                     		                        connection.Endpoint.HostName, connection.Endpoint.Port)
-					                     	});
+											{
+												Message = string.Format("Connected to the RabbitMQ node on host:{0}, port:{1}.",
+																		connection.Endpoint.HostName, connection.Endpoint.Port)
+											});
 
 					_connection = connection;
 					OnConnectionEstablished(EventArgs.Empty);
@@ -237,13 +278,13 @@ namespace RabbitBus
 					TimeProvider.Current.Sleep(timeoutInterval);
 				}
 
-				if(stopwatch.Elapsed > timeout)
+				if (stopwatch.Elapsed > timeout)
 				{
 					break;
 				}
 			}
 
-			if(connection == null)
+			if (connection == null)
 			{
 				Logger.Current.Write("A connection to the RabbitMQ broker could not be established within the allotted time frame", TraceEventType.Critical);
 			}
@@ -252,12 +293,12 @@ namespace RabbitBus
 		void UnexpectedConnectionShutdown(ISession session, ShutdownEventArgs reason)
 		{
 			Logger.Current.Write("Connection was shut down.", TraceEventType.Information);
-			((ConnectionBase) _connection).m_session0.SessionShutdown -= UnexpectedConnectionShutdown;
+			((ConnectionBase)_connection).m_session0.SessionShutdown -= UnexpectedConnectionShutdown;
 
 			lock (_connectionLock)
 			{
 				if (_closed) return;
-				if(Reconnect(TimeSpan.FromSeconds(10)))
+				if (Reconnect(TimeSpan.FromSeconds(10)))
 				{
 					RenewSubscriptions(_subscriptions.Values);
 					_messagePublisher.Flush();
@@ -303,7 +344,7 @@ namespace RabbitBus
 				try
 				{
 					Logger.Current.Write(string.Format("Attempting reconnect with last known configuration in {0} seconds.",
-					                                   timeSpan.ToString("ss")), TraceEventType.Information);
+													   timeSpan.ToString("ss")), TraceEventType.Information);
 					TimeProvider.Current.Sleep(_configurationModel.ReconnectionInterval);
 					InitializeConnection(_connectionFactory, TimeSpan.MinValue);
 				}
@@ -312,7 +353,7 @@ namespace RabbitBus
 					Logger.Current.Write("Connection failed.", TraceEventType.Information);
 				}
 
-				if(stopwatch.Elapsed > _configurationModel.ReconnectionTimeout)
+				if (stopwatch.Elapsed > _configurationModel.ReconnectionTimeout)
 				{
 					Logger.Current.Write("Timeout elapsed for reconnection attempts.", TraceEventType.Error);
 					OnConnectionTimeout(EventArgs.Empty);
@@ -329,14 +370,14 @@ namespace RabbitBus
 			{
 				if (_connection != null)
 				{
-					((ConnectionBase) _connection).m_session0.SessionShutdown -= UnexpectedConnectionShutdown;
+					((ConnectionBase)_connection).m_session0.SessionShutdown -= UnexpectedConnectionShutdown;
 					if (_connection != null && _connection.IsOpen)
 					{
 						_connection.Close();
 						RemoveSubscriptions();
 						string message = string.Format("Disconnected from the RabbitMQ node on host:{0}, port:{1}.",
-						                               _connection.Endpoint.HostName, _connection.Endpoint.Port);
-						Logger.Current.Write(new LogEntry {Message = message});
+													   _connection.Endpoint.HostName, _connection.Endpoint.Port);
+						Logger.Current.Write(new LogEntry { Message = message });
 					}
 					_closed = true;
 				}
@@ -345,12 +386,12 @@ namespace RabbitBus
 
 		void SubscribeMessage<TMessage>(Action<IMessageContext<TMessage>> action, string routingKey, IDictionary arguments)
 		{
-			IConsumeInfo routeInfo = _configurationModel.ConsumeRouteConfiguration.GetRouteInfo(typeof (TMessage));
+			IConsumeInfo routeInfo = _configurationModel.ConsumeRouteConfiguration.GetRouteInfo(typeof(TMessage));
 			var subscription = new Subscription<TMessage>(_connection, _configurationModel.DefaultDeadLetterStrategy,
-			                                              _configurationModel.DefaultSerializationStrategy,
-			                                              routeInfo, routingKey, action, arguments, _defaultErrorCallback,
-			                                              _messagePublisher, SubscriptionType.Subscription, TimeSpan.MinValue);
-			_subscriptions.Add(new SubscriptionKey(typeof (TMessage), routingKey, arguments), subscription);
+														  _configurationModel.DefaultSerializationStrategy,
+														  routeInfo, routingKey, action, arguments, _defaultErrorCallback,
+														  _messagePublisher, SubscriptionType.Subscription, TimeSpan.MinValue);
+			_subscriptions.Add(new SubscriptionKey(typeof(TMessage), routingKey, arguments), subscription);
 			subscription.Start();
 		}
 
