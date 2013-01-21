@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using RabbitBus.Configuration;
@@ -12,6 +13,8 @@ namespace RabbitBus
 {
 	class MessagePublisher : IMessagePublisher
 	{
+        private readonly List<ISubscription> _callbackSubscriptions;
+        private readonly object _callbacksLock = new object();
 		readonly IRouteConfiguration<IConsumeInfo> _consumeRouteConfiguration;
 		readonly ISerializationStrategy _defaultSerializationStrategy;
 		readonly IRouteConfiguration<IPublishInfo> _publishRouteConfiguration;
@@ -167,19 +170,37 @@ namespace RabbitBus
 					consumeInfo.QueueName = queueName;
 					consumeInfo.Exclusive = true;
 
-					new Subscription<TReplyMessage>(_connection,
-					                                new DefaultDeadLetterStrategy(),
-					                                serializationStrategy,
-					                                consumeInfo,
-					                                queueName /* routing key */,
-					                                replyAction,
-					                                null,
-					                                x => { },
-					                                this,
-					                                SubscriptionType.RemoteProcedure,
-					                                timeout).Start();
+                    var sub = new Subscription<TReplyMessage>(_connection,
+                                                              new DefaultDeadLetterStrategy(),
+                                                              serializationStrategy,
+                                                              consumeInfo,
+                                                              queueName /* routing key */,
+                                                              replyAction,
+                                                              null,
+                                                              x => { },
+                                                              this,
+                                                              SubscriptionType.RemoteProcedure,
+                                                              timeout);
+
+                    // for prevent subscription to be GC'ed
+                    sub.Stopped += CallbackSubscriptionStopped;
+
+                    lock (_callbacksLock)
+                    {
+                        _callbackSubscriptions.Add(sub);
+                    }
+
+                    sub.Start();
 				});
 		}
+
+        void CallbackSubscriptionStopped(object sender, EventArgs e)
+        {
+            lock (_callbacksLock)
+            {
+                _callbackSubscriptions.Remove((ISubscription)sender);
+            }
+        }
 
 		static ListDictionary GetHeaders(IDictionary headers, IDictionary defaultHeaders)
 		{
