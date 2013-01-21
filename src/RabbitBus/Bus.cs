@@ -52,12 +52,34 @@ namespace RabbitBus
 			PublishMessage(requestMessage, null, null, action, TimeSpan.MinValue);
 		}
 
+        public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, string routingKey, Action<IMessageContext<TReplyMessage>> action)
+        {
+            PublishMessage(requestMessage, routingKey, null, action, TimeSpan.MinValue);
+        }
+
+        public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, IDictionary headers, Action<IMessageContext<TReplyMessage>> action)
+        {
+            PublishMessage(requestMessage, null, headers, action, TimeSpan.MinValue);
+        }
+
 		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage,
 		                                                    Action<IMessageContext<TReplyMessage>> action,
 		                                                    TimeSpan callbackTimeout)
 		{
 			PublishMessage(requestMessage, null, null, action, callbackTimeout);
 		}
+
+        public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, string routingKey, Action<IMessageContext<TReplyMessage>> action,
+                                                            TimeSpan callbackTimeout)
+        {
+            PublishMessage(requestMessage, routingKey, null, action, callbackTimeout);
+        }
+
+        public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage, IDictionary headers, Action<IMessageContext<TReplyMessage>> action,
+                                                            TimeSpan callbackTimeout)
+        {
+            PublishMessage(requestMessage, null, headers, action, callbackTimeout);
+        }
 
 		public void Publish<TMessage>(TMessage message, string routingKey)
 		{
