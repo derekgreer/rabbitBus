@@ -116,9 +116,13 @@ namespace RabbitBus
 		{
 			IPublishInfo publishInfo = _publishRouteConfiguration.GetRouteInfo(message.GetType());
 			IModel channel = _connection.CreateModel();
-			channel.ExchangeDeclare(publishInfo.ExchangeName, publishInfo.ExchangeType,
-			                        publishInfo.IsDurable,
-			                        publishInfo.IsAutoDelete, null);
+            if (publishInfo.ExchangeName != string.Empty)
+            {
+                // only declare if not default exchange
+                channel.ExchangeDeclare(publishInfo.ExchangeName, publishInfo.ExchangeType,
+                                        publishInfo.IsDurable,
+                                        publishInfo.IsAutoDelete, null);
+            }
 			ISerializationStrategy serializationStrategy = publishInfo.SerializationStrategy ?? _defaultSerializationStrategy;
 			byte[] bytes = serializationStrategy.Serialize(message);
 
