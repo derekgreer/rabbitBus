@@ -98,7 +98,8 @@ namespace RabbitBus.Configuration.Internal
 			                  		IsExchangeDurable = convention.IsDurableExchange(type),
 			                  		IsQueueAutoDelete = convention.IsAutoDeleteQueue(type),
 			                  		IsQueueDurable = convention.IsDurableQueue(type),
-			                  		QualityOfService = convention.GetQualityOfService(type)
+			                  		QualityOfService = convention.GetQualityOfService(type),
+			                  		DeadLetterExchangeName = convention.GetDeadLetterExchangeName(type)
 			                  	};
 
 			ISerializationStrategy serializationStrategy = convention.GetSerializationStrategy(type);

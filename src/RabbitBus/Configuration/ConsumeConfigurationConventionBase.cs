@@ -65,5 +65,10 @@ namespace RabbitBus.Configuration
 		{
 			return 0;
 		}
+
+		public string GetDeadLetterExchangeName(Type type)
+		{
+			return null;
+		}
 	}
 }
