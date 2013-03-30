@@ -61,9 +61,9 @@ namespace RabbitBus.Specs.Integration
 				_bus.Connect();
 				_bus.Subscribe<TestMessage>(ctx => { _actualMessage = ctx.Message; });
 				new RabbitService().Restart();
-				_rabbitExchange = new RabbitExchange("localhost", SpecId, ExchangeType.Direct);
 				_bus.ConnectionEstablished += (b, e) => { _connectionRestablished = true; };
 				Wait.Until(() => _connectionRestablished);
+				_rabbitExchange = new RabbitExchange("localhost", SpecId, ExchangeType.Direct);
 			};
 
 		Cleanup after = () =>
@@ -72,8 +72,7 @@ namespace RabbitBus.Specs.Integration
 				_rabbitExchange.Close();
 			};
 
-		Because of =
-			() =>
+		Because of = () =>
 			new Action(() => _rabbitExchange.Publish(new TestMessage("test"))).BlockUntil(() => _actualMessage.Text != "wrong")();
 
 		It should_resume_prior_subscriptions = () => _actualMessage.Text.ShouldEqual("test");

@@ -40,21 +40,30 @@ namespace RabbitBus.Specs.Infrastructure
 
 		public void Publish<TMessage>(TMessage message)
 		{
-			Publish(message, string.Empty, new BinarySerializationStrategy());
+			Publish(message, string.Empty, null, new BinarySerializationStrategy());
 		}
 
 		public void Publish<TMessage>(TMessage message, string routingKey)
 		{
-			Publish(message, routingKey, new BinarySerializationStrategy());
+			Publish(message, routingKey, null, new BinarySerializationStrategy());
 		}
 
-		public void Publish<TMessage>(TMessage message, string routingKey, ISerializationStrategy serializationStrategy)
+		public void Publish<TMessage>(TMessage message, int ttl)
+		{
+			Publish(message, string.Empty, ttl, new BinarySerializationStrategy());
+		}
+
+		public void Publish<TMessage>(TMessage message, string routingKey, int? ttl, ISerializationStrategy serializationStrategy)
 		{
 			Console.WriteLine(
 				string.Format("Publishing message to exchange:\'{0}\' routing key:\'{1}\'", _exchangeName, routingKey),
 				TraceEventType.Information);
 			byte[] msg = serializationStrategy.Serialize(message);
 			var properties = new BasicProperties();
+			if (ttl.HasValue)
+			{
+				properties.Expiration = ttl.Value.ToString();
+			}
 			properties.Timestamp = new AmqpTimestamp((long) (DateTime.Now - _unixEpoch).TotalSeconds);
 			_channel.BasicPublish(_exchangeName, routingKey, properties, msg);
 		}

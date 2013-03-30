@@ -8,7 +8,7 @@ using RabbitMQ.Client;
 namespace RabbitBus.Specs.Integration
 {
 	[Integration]
-	[Subject("Default Serializaton")]
+	[Subject("Empty Serializaton")]
 	public class when_configuring_the_default_serialization_strategy
 	{
 		const string SpecId = "3036A3FA-38E4-4A94-9D83-8B2100447FBD";

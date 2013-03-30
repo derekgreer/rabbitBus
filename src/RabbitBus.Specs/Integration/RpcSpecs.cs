@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using Machine.Specifications;
 using RabbitBus.Serialization.Json;
@@ -22,21 +24,21 @@ namespace RabbitBus.Specs.Integration
 			{
 				_client = new BusBuilder()
 					.Configure(ctx => ctx
-					                  	.WithLogger(new ConsoleLogger())
-					                  	.Publish<RequestMessage>()
-					                  	.WithExchange(SpecId)
-					                  	.WithSerializationStrategy(new JsonSerializationStrategy())
-					                  	.OnReplyError(x => { }))
+						                  .WithLogger(new ConsoleLogger())
+						                  .Publish<RequestMessage>()
+						                  .WithExchange(SpecId)
+						                  .WithSerializationStrategy(new JsonSerializationStrategy())
+						                  .OnReplyError(x => { }))
 					.Build();
 				_client.Connect();
 
 				_server = new BusBuilder()
 					.Configure(ctx => ctx
-					                  	.WithLogger(new ConsoleLogger())
-					                  	.Consume<RequestMessage>()
-					                  	.WithSerializationStrategy(new JsonSerializationStrategy())
-					                  	.WithExchange(SpecId)
-					                  	.WithQueue(SpecId))
+						                  .WithLogger(new ConsoleLogger())
+						                  .Consume<RequestMessage>()
+						                  .WithSerializationStrategy(new JsonSerializationStrategy())
+						                  .WithExchange(SpecId)
+						                  .WithQueue(SpecId))
 					.Build();
 				_server.Connect();
 
@@ -56,10 +58,10 @@ namespace RabbitBus.Specs.Integration
 
 		Because of = () =>
 		             new Action(() => _client.Publish<RequestMessage, ReplyMessage>(new RequestMessage("text"), mc =>
-		             	{
-		             		_mc = mc;
-		             		mc.AcceptMessage();
-		             	})).BlockUntil(() => _mc != null)();
+			             {
+				             _mc = mc;
+				             mc.AcceptMessage();
+			             })).BlockUntil(() => _mc != null)();
 
 		It should_receive_the_expected_correlation_id = () => _mc.CorrelationId.ShouldEqual(_expectedCorrelationId);
 
@@ -77,48 +79,113 @@ namespace RabbitBus.Specs.Integration
 		static string _expectedCorrelationId = "unset";
 
 		Establish context = () =>
-		{
-			_client = new BusBuilder()
-				.Configure(ctx => ctx
-														.WithLogger(new ConsoleLogger())
-														.Publish<RequestMessage>()
-														.WithExchange(SpecId, cfg => cfg.Fanout().Not.AutoDelete().Durable())
-														.WithSerializationStrategy(new JsonSerializationStrategy())
-														.OnReplyError(x => { }))
-				.Build();
-			_client.Connect();
-
-			_server = new BusBuilder()
-				.Configure(ctx => ctx
-														.WithLogger(new ConsoleLogger())
-														.Consume<RequestMessage>()
-														.WithSerializationStrategy(new JsonSerializationStrategy())
-														.WithExchange(SpecId, cfg => cfg.Fanout().Not.AutoDelete().Durable())
-														.WithQueue(SpecId, cfg => cfg.Not.AutoDelete().Durable()))
-				.Build();
-			_server.Connect();
-
-			_server.Subscribe<RequestMessage>(ctx =>
 			{
-				_expectedCorrelationId = ctx.CorrelationId;
-				ctx.Reply(new ReplyMessage("reply"));
-				ctx.AcceptMessage();
-			});
-		};
+				_client = new BusBuilder()
+					.Configure(ctx => ctx
+						                  .WithLogger(new ConsoleLogger())
+						                  .Publish<RequestMessage>()
+						                  .WithExchange(SpecId, cfg => cfg.Fanout().Not.AutoDelete().Durable())
+						                  .WithSerializationStrategy(new JsonSerializationStrategy())
+						                  .OnReplyError(x => { }))
+					.Build();
+				_client.Connect();
+
+				_server = new BusBuilder()
+					.Configure(ctx => ctx
+						                  .WithLogger(new ConsoleLogger())
+						                  .Consume<RequestMessage>()
+						                  .WithSerializationStrategy(new JsonSerializationStrategy())
+						                  .WithExchange(SpecId, cfg => cfg.Fanout().Not.AutoDelete().Durable())
+						                  .WithQueue(SpecId, cfg => cfg.Not.AutoDelete().Durable()))
+					.Build();
+				_server.Connect();
+
+				_server.Subscribe<RequestMessage>(ctx =>
+					{
+						_expectedCorrelationId = ctx.CorrelationId;
+						ctx.Reply(new ReplyMessage("reply"));
+						ctx.AcceptMessage();
+					});
+			};
 
 		Cleanup after = () =>
-		{
-			_client.Close();
-			_server.Close();
-			new RabbitExchange("localhost", SpecId, ExchangeType.Fanout, true, false).Delete(false).Close();
-		};
+			{
+				_client.Close();
+				_server.Close();
+				new RabbitExchange("localhost", SpecId, ExchangeType.Fanout, true, false).Delete(false).Close();
+			};
 
 		Because of = () =>
-								 new Action(() => _client.Publish<RequestMessage, ReplyMessage>(new RequestMessage("text"), mc =>
-								 {
-									 _mc = mc;
-									 mc.AcceptMessage();
-								 })).BlockUntil(() => _mc != null)();
+		             new Action(() => _client.Publish<RequestMessage, ReplyMessage>(new RequestMessage("text"), mc =>
+			             {
+				             _mc = mc;
+				             mc.AcceptMessage();
+			             })).BlockUntil(() => _mc != null)();
+
+		It should_receive_the_expected_correlation_id = () => _mc.CorrelationId.ShouldEqual(_expectedCorrelationId);
+
+		It should_receive_the_response_message = () => _mc.Message.Text.ShouldEqual("reply");
+	}
+
+	[Integration]
+	[Subject("Remote Procedure Calls")]
+	public class when_publishing_remote_procedure_call_requests_to_a_persistent_durable_exchange_with_headers
+	{
+		const string SpecId = "93E3A6AE-DFDC-4563-8975-09A159C09096";
+		static IMessageContext<ReplyMessage> _mc;
+		static Bus _client;
+		static Bus _server;
+		static string _expectedCorrelationId = "unset";
+		static Dictionary<string, object> _headers;
+
+		Establish context = () =>
+			{
+				_headers = new Dictionary<string, object>();
+				_headers.Add("header-key", Encoding.UTF8.GetBytes("header key value"));
+
+				_client = new BusBuilder()
+					.Configure(ctx => ctx
+						                  .WithLogger(new ConsoleLogger())
+						                  .Publish<RequestMessage>()
+						                  .WithExchange(SpecId, cfg => cfg.Headers().Not.AutoDelete().Durable())
+						                  .WithSerializationStrategy(new JsonSerializationStrategy())
+						                  .OnReplyError(x => { }))
+					.Build();
+				_client.Connect();
+
+				_server = new BusBuilder()
+					.Configure(ctx => ctx
+						                  .WithLogger(new ConsoleLogger())
+						                  .Consume<RequestMessage>()
+						                  .WithSerializationStrategy(new JsonSerializationStrategy())
+						                  .WithExchange(SpecId, cfg => cfg.Headers().Not.AutoDelete().Durable())
+						                  .WithQueue(SpecId, cfg => cfg.Not.AutoDelete().Durable()))
+					.Build();
+				_server.Connect();
+
+				_server.Subscribe<RequestMessage>(ctx =>
+					{
+						_expectedCorrelationId = ctx.CorrelationId;
+						ctx.Reply(new ReplyMessage("reply"));
+						ctx.AcceptMessage();
+					}, _headers);
+			};
+
+		Cleanup after = () =>
+			{
+				_client.Close();
+				_server.Close();
+				new RabbitExchange("localhost", SpecId, ExchangeType.Headers, true, false).Delete(false).Close();
+			};
+
+		Because of = () =>
+		             new Action(() => _client.Publish<RequestMessage, ReplyMessage>(new RequestMessage("text"),
+		                                                                            new MessageProperties {Headers = _headers},
+		                                                                            mc =>
+			                                                                            {
+				                                                                            _mc = mc;
+				                                                                            mc.AcceptMessage();
+			                                                                            })).BlockUntil(() => _mc != null)();
 
 		It should_receive_the_expected_correlation_id = () => _mc.CorrelationId.ShouldEqual(_expectedCorrelationId);
 
@@ -140,21 +207,21 @@ namespace RabbitBus.Specs.Integration
 			{
 				_client = new BusBuilder()
 					.Configure(ctx => ctx
-					                  	.WithLogger(new ConsoleLogger())
-					                  	.Publish<RequestMessage>()
-					                  	.WithExchange(SpecId)
-					                  	.WithSerializationStrategy(new JsonSerializationStrategy())
-					                  	.OnReplyError(x => { }))
+						                  .WithLogger(new ConsoleLogger())
+						                  .Publish<RequestMessage>()
+						                  .WithExchange(SpecId)
+						                  .WithSerializationStrategy(new JsonSerializationStrategy())
+						                  .OnReplyError(x => { }))
 					.Build();
 				_client.Connect();
 
 				_server = new BusBuilder()
 					.Configure(ctx => ctx
-					                  	.WithLogger(new ConsoleLogger())
-					                  	.Consume<RequestMessage>()
-					                  	.WithSerializationStrategy(new JsonSerializationStrategy())
-					                  	.WithExchange(SpecId)
-					                  	.WithQueue(SpecId))
+						                  .WithLogger(new ConsoleLogger())
+						                  .Consume<RequestMessage>()
+						                  .WithSerializationStrategy(new JsonSerializationStrategy())
+						                  .WithExchange(SpecId)
+						                  .WithQueue(SpecId))
 					.Build();
 				_server.Connect();
 
@@ -173,12 +240,14 @@ namespace RabbitBus.Specs.Integration
 			};
 
 		Because of = () =>
-		             new Action(() => _client.Publish<RequestMessage, ReplyMessage>(new RequestMessage("text"), mc =>
-		             	{
-		             		_mc = mc;
-		             		_message = mc.Message.Text;
-		             		mc.AcceptMessage();
-		             	}, Timeout)).BlockUntil(() => _mc != null)();
+		             new Action(() => _client.Publish<RequestMessage, ReplyMessage>(new RequestMessage("text"),
+		                                                                            mc =>
+			                                                                            {
+				                                                                            _mc = mc;
+				                                                                            _message = mc.Message.Text;
+				                                                                            mc.AcceptMessage();
+			                                                                            }, Timeout)).BlockUntil(() => _mc != null)
+			             ();
 
 		It should_timeout_after_the_specified_time = () => _message.ShouldNotEqual("reply");
 	}

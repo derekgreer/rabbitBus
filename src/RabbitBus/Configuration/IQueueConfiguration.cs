@@ -1,3 +1,5 @@
+using System;
+
 namespace RabbitBus.Configuration
 {
 	public interface IQueueConfiguration
@@ -7,5 +9,6 @@ namespace RabbitBus.Configuration
 		IQueueConfiguration Durable();
 		IQueueConfiguration AutoAcknowledge();
 		IQueueConfiguration UnacknowledgeLimit(ushort count);
+		IQueueConfiguration WithExpiration(TimeSpan expirationTimeSpan);
 	}
 }

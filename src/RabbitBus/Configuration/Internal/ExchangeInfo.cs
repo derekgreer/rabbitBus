@@ -56,27 +56,27 @@ namespace RabbitBus.Configuration.Internal
 		public string ExchangeType { get; set; }
 
 		public bool IsAutoDelete { get; set; }
+	}
 
-		public class NegatableExchangeConfiguration : INegatableExchangeConfiguration
+	class NegatableExchangeConfiguration : INegatableExchangeConfiguration
+	{
+		readonly IExchangeInfo _exchangeInfo;
+
+		public NegatableExchangeConfiguration(IExchangeInfo exchangeInfo)
 		{
-			readonly IExchangeInfo _exchangeInfo;
+			_exchangeInfo = exchangeInfo;
+		}
 
-			public NegatableExchangeConfiguration(IExchangeInfo exchangeInfo)
-			{
-				_exchangeInfo = exchangeInfo;
-			}
+		public IExchangeConfiguration Durable()
+		{
+			_exchangeInfo.IsDurable = false;
+			return (IExchangeConfiguration) _exchangeInfo;
+		}
 
-			public IExchangeConfiguration Durable()
-			{
-				_exchangeInfo.IsDurable = !_exchangeInfo.IsDurable;
-				return (IExchangeConfiguration) _exchangeInfo;
-			}
-
-			public IExchangeConfiguration AutoDelete()
-			{
-				_exchangeInfo.IsAutoDelete = !_exchangeInfo.IsAutoDelete;
-				return (IExchangeConfiguration) _exchangeInfo;
-			}
+		public IExchangeConfiguration AutoDelete()
+		{
+			_exchangeInfo.IsAutoDelete = false;
+			return (IExchangeConfiguration) _exchangeInfo;
 		}
 	}
 }

@@ -1,3 +1,5 @@
+using System;
+
 namespace RabbitBus.Configuration.Internal
 {
 	class QueueInfo : IQueueInfo, IQueueConfiguration
@@ -6,6 +8,10 @@ namespace RabbitBus.Configuration.Internal
 		{
 			IsAutoDelete = true;
 		}
+
+		public TimeSpan? Expiration { get; set; }
+
+		public ushort QualityOfService { get; set; }
 
 		public IQueueConfiguration AutoDelete()
 		{
@@ -31,7 +37,13 @@ namespace RabbitBus.Configuration.Internal
 			return this;
 		}
 
-		public ushort QualityOfService { get; set; }
+		public IQueueConfiguration WithExpiration(TimeSpan expirationTimeSpan)
+		{
+			Expiration = expirationTimeSpan;
+			return this;
+		}
+
+		public bool IsExclusive { get; set; }
 
 		public INegatableQueueConfiguration Not
 		{
@@ -42,33 +54,39 @@ namespace RabbitBus.Configuration.Internal
 
 		public bool IsAutoDelete { get; set; }
 		public bool IsAutoAcknowledge { get; set; }
+	}
 
-		public class NegatableQueueConfiguration : INegatableQueueConfiguration
+	class NegatableQueueConfiguration : INegatableQueueConfiguration
+	{
+		readonly IQueueInfo _queueInfo;
+
+		public NegatableQueueConfiguration(IQueueInfo queueInfo)
 		{
-			readonly IQueueInfo _queueInfo;
+			_queueInfo = queueInfo;
+		}
 
-			public NegatableQueueConfiguration(IQueueInfo queueInfo)
-			{
-				_queueInfo = queueInfo;
-			}
+		public IQueueConfiguration Durable()
+		{
+			_queueInfo.IsDurable = false;
+			return (IQueueConfiguration) _queueInfo;
+		}
 
-			public IQueueConfiguration Durable()
-			{
-				_queueInfo.IsDurable = !_queueInfo.IsDurable;
-				return (IQueueConfiguration) _queueInfo;
-			}
+		public IQueueConfiguration AutoAcknowledge()
+		{
+			_queueInfo.IsAutoAcknowledge = false;
+			return (IQueueConfiguration) _queueInfo;
+		}
 
-			public IQueueConfiguration AutoAcknowledge()
-			{
-				_queueInfo.IsAutoAcknowledge = false;
-				return (IQueueConfiguration) _queueInfo;
-			}
+		public IQueueConfiguration AutoDelete()
+		{
+			_queueInfo.IsAutoDelete = false;
+			return (IQueueConfiguration) _queueInfo;
+		}
 
-			public IQueueConfiguration AutoDelete()
-			{
-				_queueInfo.IsAutoDelete = false;
-				return (IQueueConfiguration) _queueInfo;
-			}
+		public IQueueConfiguration Exclusive()
+		{
+			_queueInfo.IsExclusive = false;
+			return (IQueueConfiguration)_queueInfo;
 		}
 	}
 }

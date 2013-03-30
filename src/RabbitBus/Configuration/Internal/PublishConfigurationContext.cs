@@ -69,6 +69,12 @@ namespace RabbitBus.Configuration.Internal
 			return this;
 		}
 
+		public IPublishConfigurationContext WithExpiration(TimeSpan expirationTimeSpan)
+		{
+			PublishInfo.Expiration = expirationTimeSpan;
+			return this;
+		}
+
 
 		public IPublishInfo PublishInfo { get; private set; }
 

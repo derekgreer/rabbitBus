@@ -16,6 +16,7 @@ namespace RabbitBus.Configuration.Internal
 		}
 
 		public ISerializationStrategy SerializationStrategy { get; private set; }
+		public IConsumeInfo ConsumeInfo { get; private set; }
 
 		public IConsumeConfigurationContext WithExchange(string exchangeName)
 		{
@@ -47,7 +48,9 @@ namespace RabbitBus.Configuration.Internal
 			ConsumeInfo.IsQueueDurable = queueInfo.IsDurable;
 			ConsumeInfo.IsQueueAutoDelete = queueInfo.IsAutoDelete;
 			ConsumeInfo.IsAutoAcknowledge = queueInfo.IsAutoAcknowledge;
+			ConsumeInfo.IsQueueExclusive = queueInfo.IsExclusive;
 			ConsumeInfo.QualityOfService = queueInfo.QualityOfService;
+			ConsumeInfo.Expiration = queueInfo.Expiration;
 			return this;
 		}
 
@@ -69,6 +72,15 @@ namespace RabbitBus.Configuration.Internal
 			return this;
 		}
 
-		public IConsumeInfo ConsumeInfo { get; private set; }
+		public IConsumeConfigurationContext WithDeadLetterExchange(string exchangeName)
+		{
+			return WithDeadLetterExchange(exchangeName, null);
+		}
+
+		public IConsumeConfigurationContext WithDeadLetterExchange(string exchangeName, string routingKey)
+		{
+			ConsumeInfo.DeadLetterConfiguration = new DeadLetterConfiguration(exchangeName, routingKey);
+			return this;
+		}
 	}
 }

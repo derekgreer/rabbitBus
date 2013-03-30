@@ -65,5 +65,10 @@ namespace RabbitBus.Configuration
 		{
 			return 0;
 		}
+
+		public IDeadLetterConfiguration GetDeadLetterConfiguration(Type type)
+		{
+			return null;
+		}
 	}
 }

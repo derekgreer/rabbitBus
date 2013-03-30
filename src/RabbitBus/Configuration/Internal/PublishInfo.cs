@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 
 namespace RabbitBus.Configuration.Internal
@@ -22,5 +23,6 @@ namespace RabbitBus.Configuration.Internal
 		public bool IsSigned { get; set; }
 		public IConsumeInfo ReplyInfo { get; set; }
 		public IDictionary DefaultHeaders { get; set; }
+		public TimeSpan? Expiration { get; set; }
 	}
 }

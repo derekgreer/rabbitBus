@@ -15,15 +15,18 @@ namespace RabbitBus.Configuration.Internal
 		public string ExchangeName { get; set; }
 		public string QueueName { get; set; }
 		public string DefaultRoutingKey { get; set; }
-		public bool Exclusive { get; set; }
 		public bool IsAutoAcknowledge { get; set; }
 		public bool IsQueueAutoDelete { get; set; }
 		public bool IsExchangeAutoDelete { get; set; }
 		public bool IsQueueDurable { get; set; }
 		public bool IsExchangeDurable { get; set; }
+		public bool IsQueueExclusive { get; set; }
 		public string ExchangeType { get; set; }
 		public ISerializationStrategy SerializationStrategy { get; set; }
 		public Action<IErrorContext> ErrorCallback { get; set; }
 		public ushort QualityOfService { get; set; }
+		public IDeadLetterConfiguration DeadLetterConfiguration { get; set; }
+		public TimeSpan? Expiration { get; set; }
+		
 	}
 }

@@ -6,28 +6,24 @@ namespace RabbitBus
 	class SubscriptionKey : ISubscriptionKey
 	{
 		readonly Type _messageType;
-		readonly string _routingKey;
-		readonly IDictionary _arguments;
+		readonly MessageProperties _messageProperties;
 
-		public SubscriptionKey(Type messageType, string routingKey, IDictionary arguments)
+		public SubscriptionKey(Type messageType, MessageProperties messageProperties)
 		{
 			_messageType = messageType;
-			_routingKey = routingKey;
-			_arguments = arguments;
+			_messageProperties = messageProperties;
 		}
 
-		public bool Equals(SubscriptionKey other)
+		protected bool Equals(SubscriptionKey other)
 		{
-			if (ReferenceEquals(null, other)) return false;
-			if (ReferenceEquals(this, other)) return true;
-			return Equals(other._messageType, _messageType) && Equals(other._routingKey, _routingKey) && Equals(other._arguments, _arguments);
+			return Equals(_messageType, other._messageType) && Equals(_messageProperties, other._messageProperties);
 		}
 
 		public override bool Equals(object obj)
 		{
 			if (ReferenceEquals(null, obj)) return false;
 			if (ReferenceEquals(this, obj)) return true;
-			if (obj.GetType() != typeof (SubscriptionKey)) return false;
+			if (obj.GetType() != this.GetType()) return false;
 			return Equals((SubscriptionKey) obj);
 		}
 
@@ -35,11 +31,18 @@ namespace RabbitBus
 		{
 			unchecked
 			{
-				int result = (_messageType != null ? _messageType.GetHashCode() : 0);
-				result = (result*397) ^ (_routingKey != null ? _routingKey.GetHashCode() : 0);
-				result = (result*397) ^ (_arguments != null ? _arguments.GetHashCode() : 0);
-				return result;
+				return ((_messageType != null ? _messageType.GetHashCode() : 0)*397) ^ (_messageProperties != null ? _messageProperties.GetHashCode() : 0);
 			}
+		}
+
+		public static bool operator ==(SubscriptionKey left, SubscriptionKey right)
+		{
+			return Equals(left, right);
+		}
+
+		public static bool operator !=(SubscriptionKey left, SubscriptionKey right)
+		{
+			return !Equals(left, right);
 		}
 	}
 }

@@ -93,12 +93,13 @@ namespace RabbitBus.Configuration.Internal
 			                  		QueueName = convention.GetQueueName(type),
 			                  		IsAutoAcknowledge = convention.IsAutoAcknowledge(type),
 			                  		DefaultRoutingKey = convention.GetDefaultRouteKey(type),
-			                  		Exclusive = convention.IsExclusive(type),
+			                  		IsQueueExclusive = convention.IsExclusive(type),
 			                  		IsExchangeAutoDelete = convention.IsAutoDeleteExchange(type),
 			                  		IsExchangeDurable = convention.IsDurableExchange(type),
 			                  		IsQueueAutoDelete = convention.IsAutoDeleteQueue(type),
 			                  		IsQueueDurable = convention.IsDurableQueue(type),
-			                  		QualityOfService = convention.GetQualityOfService(type)
+			                  		QualityOfService = convention.GetQualityOfService(type),
+			                  		DeadLetterConfiguration = convention.GetDeadLetterConfiguration(type)
 			                  	};
 
 			ISerializationStrategy serializationStrategy = convention.GetSerializationStrategy(type);

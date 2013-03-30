@@ -44,7 +44,7 @@ namespace RabbitBus.Specs.Integration
 
 		Because of =
 			() =>
-			new Action(() => _exchange.Publish(new TestMessage("test"), string.Empty, _serializationStrategy)).BlockUntil(
+			new Action(() => _exchange.Publish(new TestMessage("test"), string.Empty, null, _serializationStrategy)).BlockUntil(
 				() => _actualMessage != null)();
 
 		It should_deserialize_correctly = () => _expectedMessage.ShouldEqual(_actualMessage);

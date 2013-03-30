@@ -42,7 +42,16 @@ namespace RabbitBus.Specs.Infrastructure
 
 		public RabbitQueue(string host, string exchangeName, string exchangeType, string queueName, bool durableExchange,
 		                   bool autoDeleteExchange, bool durableQueue, bool autoDeleteQueue, string routingKey,
-		                   IDictionary headers)
+		                   IDictionary headers):
+			this(host, exchangeName, exchangeType, queueName, durableExchange, autoDeleteExchange,
+								 durableQueue, autoDeleteQueue, routingKey, headers, null)
+		{
+			
+		}
+
+		public RabbitQueue(string host, string exchangeName, string exchangeType, string queueName, bool durableExchange,
+		                   bool autoDeleteExchange, bool durableQueue, bool autoDeleteQueue, string routingKey,
+		                   IDictionary headers, IDictionary queueProperties)
 		{
 			_queueName = queueName;
 			var connectionFactory = new ConnectionFactory {HostName = host};
@@ -53,7 +62,7 @@ namespace RabbitBus.Specs.Infrastructure
 			if (exchangeName != string.Empty)
 			{
 				_channel.ExchangeDeclare(exchangeName, exchangeType, durableExchange, autoDeleteExchange, null);
-				_channel.QueueDeclare(queueName, durableQueue, false, autoDeleteQueue, null);
+				_channel.QueueDeclare(queueName, durableQueue, false, autoDeleteQueue, queueProperties);
 				_channel.QueueBind(queueName, exchangeName, routingKey, headers);
 			}
 			else
@@ -188,7 +197,7 @@ namespace RabbitBus.Specs.Infrastructure
 
 		public RabbitDeadLetterQueue(string host, string exchangeName, string exchangeType, string queueName,
 		                             string routingKey)
-			: base("localhost", string.Empty, ExchangeType.Direct, "deadletter", true, false, true, false, "deadletter", null)
+			: base("localhost", exchangeName, exchangeType, queueName, true, false, true, false, routingKey, null)
 		{
 		}
 
@@ -207,7 +216,7 @@ namespace RabbitBus.Specs.Infrastructure
 		}
 
 		public RabbitDeadLetterQueue(string queueName)
-			: base("localhost", string.Empty, ExchangeType.Direct, queueName, true, false, true, false, "deadletter", null)
+			: base("localhost", queueName, ExchangeType.Direct, queueName, true, false, true, false, string.Empty, null)
 		{
 		}
 	}

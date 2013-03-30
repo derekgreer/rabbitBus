@@ -92,8 +92,11 @@
     <Compile Include="Integration\ErrorHandlingSpecs.cs" />
     <Compile Include="Integration\JsonSerializationSpecs.cs" />
     <Compile Include="Integration\LoggingSpecs.cs" />
+    <Compile Include="Integration\MessageExpirationSpecs.cs" />
+    <Compile Include="Integration\MessageInstanceExpirationSpecs.cs" />
     <Compile Include="Integration\QualityOfServiceSpecs.cs" />
     <Compile Include="Integration\QueueBuilderSpecs.cs" />
+    <Compile Include="Integration\QueueMessageExpirationSpecs.cs" />
     <Compile Include="Integration\RedeliverySpecs.cs" />
     <Compile Include="Integration\PersistentMessagesSpecs.cs" />
     <Compile Include="Integration\RpcSpecs.cs" />

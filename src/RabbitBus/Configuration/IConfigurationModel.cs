@@ -9,10 +9,10 @@ namespace RabbitBus.Configuration
 		IRouteConfiguration<IPublishInfo> PublishRouteConfiguration { get; set; }
 		IRouteConfiguration<IConsumeInfo> ConsumeRouteConfiguration { get; set; }
 		ISerializationStrategy DefaultSerializationStrategy { get; set; }
-		IDeadLetterStrategy DefaultDeadLetterStrategy { get; set; }
 		IList<AutoSubscription> AutoSubscriptions { get; set; }
 		IQueueStrategy ConnectionDownQueueStrategy { get; set; }
 		TimeSpan ReconnectionInterval { get; set; }
 		TimeSpan ReconnectionTimeout { get; set; }
+		IDeadLetterConfiguration DefaultDeadLetterConfiguration { get; set; }
 	}
 }

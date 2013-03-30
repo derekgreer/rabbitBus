@@ -13,5 +13,6 @@ namespace RabbitBus.Configuration
 		IPublishConfigurationContext Signed();
 		IPublishConfigurationContext OnReplyError(Action<IErrorContext> callback);
 		IPublishConfigurationContext WithDefaultHeaders(IDictionary headers);
+		IPublishConfigurationContext WithExpiration(TimeSpan fromMilliseconds);
 	}
 }

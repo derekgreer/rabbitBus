@@ -35,63 +35,28 @@ namespace RabbitBus
 			_defaultErrorCallback = OnConsumeError;
 			_subscriptions = new Dictionary<ISubscriptionKey, ISubscription>();
 		}
-
-		public void Publish<TMessage>(TMessage message)
+		
+		public void Publish<TMessage>(TMessage message, MessageProperties messageProperties)
 		{
-			PublishMessage(message, null, null);
+			_messagePublisher.Publish(message, messageProperties);	
 		}
-
-		public void Publish<TMessage>(TMessage message, IDictionary headers)
-		{
-			PublishMessage(message, null, headers);
-		}
-
+		
 		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage,
-		                                                    Action<IMessageContext<TReplyMessage>> action)
-		{
-			PublishMessage(requestMessage, null, null, action, TimeSpan.MinValue);
-		}
-
-		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage requestMessage,
+															MessageProperties messageProperties,
 		                                                    Action<IMessageContext<TReplyMessage>> action,
 		                                                    TimeSpan callbackTimeout)
 		{
-			PublishMessage(requestMessage, null, null, action, callbackTimeout);
+			PublishMessage(requestMessage, messageProperties, action, callbackTimeout);
 		}
 
-		public void Publish<TMessage>(TMessage message, string routingKey)
+		public void Unsubscribe<TMessage>(MessageProperties messageProperties)
 		{
-			PublishMessage(message, routingKey, null);
+			UnsubscribeMessage<TMessage>(messageProperties);
 		}
 
-		public void Unsubscribe<TMessage>()
+		public void Subscribe<TMessage>(Action<IMessageContext<TMessage>> action, MessageProperties messageProperties)
 		{
-			UnsubscribeMessage<TMessage>(null, null);
-		}
-
-		public void Unsubscribe<TMessage>(string routingKey)
-		{
-			UnsubscribeMessage<TMessage>(routingKey, null);
-		}
-
-		public void Unsubscribe<TMessage>(IDictionary headers)
-		{
-			UnsubscribeMessage<TMessage>(null, headers);
-		}
-
-		public void Subscribe<TMessage>(Action<IMessageContext<TMessage>> action)
-		{
-			SubscribeMessage(action, null, null);
-		}
-
-		public void Subscribe<TMessage>(Action<IMessageContext<TMessage>> action, IDictionary headers)
-		{
-			SubscribeMessage(action, null, headers);
-		}
-
-		public void Subscribe<TMessage>(Action<IMessageContext<TMessage>> action, string routingKey)
-		{
-			SubscribeMessage(action, routingKey, null);
+			SubscribeMessage(action, messageProperties);
 		}
 
 		public IConsumerContext<TMessage> CreateConsumerContext<TMessage>()
@@ -100,7 +65,7 @@ namespace RabbitBus
 			return new ConsumerContext<TMessage>(_connection,
 			                                     _configurationModel.ConsumeRouteConfiguration.GetRouteInfo(typeof (TMessage)),
 			                                     _configurationModel.DefaultSerializationStrategy,
-			                                     _configurationModel.DefaultDeadLetterStrategy, _messagePublisher);
+			                                     _messagePublisher);
 		}
 
 		public void Dispose()
@@ -116,14 +81,14 @@ namespace RabbitBus
 				MethodInfo openSubscribeMessage = typeof (Bus).GetMethod("SubscribeMessage",
 				                                                         BindingFlags.Instance | BindingFlags.NonPublic);
 				MethodInfo closedSubscribedMessage = openSubscribeMessage.MakeGenericMethod(new[] {autoSubscription.MessageType});
-				closedSubscribedMessage.Invoke(this, new[] {autoSubscription.MessageHandler, null, null});
+				closedSubscribedMessage.Invoke(this, new[] {autoSubscription.MessageHandler, MessageProperties.Empty});
 			}
 		}
 
-		void UnsubscribeMessage<TMessage>(string routingKey, IDictionary headers)
+		void UnsubscribeMessage<TMessage>(MessageProperties messageProperties)
 		{
 			ISubscription subscription;
-			var key = new SubscriptionKey(typeof (TMessage), routingKey, headers);
+			var key = new SubscriptionKey(typeof (TMessage), messageProperties);
 			_subscriptions.TryGetValue(key, out subscription);
 
 			if (subscription != null)
@@ -133,18 +98,13 @@ namespace RabbitBus
 			}
 		}
 
-		void PublishMessage<TRequestMessage, TReplyMessage>(TRequestMessage message, string routingKey, IDictionary headers,
+		void PublishMessage<TRequestMessage, TReplyMessage>(TRequestMessage message, MessageProperties messageProperties,
 		                                                    Action<IMessageContext<TReplyMessage>> replyAction,
 		                                                    TimeSpan timeout)
 		{
-			_messagePublisher.Publish(message, routingKey, headers, replyAction, timeout);
+			_messagePublisher.Publish(message, messageProperties, replyAction, timeout);
 		}
-
-		void PublishMessage<TMessage>(TMessage message, string routingKey, IDictionary headers)
-		{
-			_messagePublisher.Publish(message, routingKey, headers);
-		}
-
+		
 		public void Connect()
 		{
 			Connect("amqp://guest:guest@localhost:5672/%2f");
@@ -160,13 +120,14 @@ namespace RabbitBus
 			var amqpTcpEndpoint = new AmqpTcpEndpoint(new Uri(amqpUri));
 
 			Logger.Current.Write(string.Format("Establishing connection to host:{0}, port:{1}",
-				amqpTcpEndpoint.HostName, amqpTcpEndpoint.Port), TraceEventType.Information);
+			                                   amqpTcpEndpoint.HostName, amqpTcpEndpoint.Port), TraceEventType.Information);
 			_connectionFactory = new ConnectionFactory
-			                     	{
-			                     		Uri = amqpUri
-			                     	};
+				{
+					Uri = amqpUri
+				};
 
 			_messagePublisher = new MessagePublisher(_connectionFactory.UserName,
+			                                         _configurationModel.DefaultDeadLetterConfiguration,
 			                                         _configurationModel.PublishRouteConfiguration,
 			                                         _configurationModel.ConsumeRouteConfiguration,
 			                                         _configurationModel.DefaultSerializationStrategy,
@@ -174,15 +135,15 @@ namespace RabbitBus
 			InitializeConnection(_connectionFactory, timeout);
 			RegisterAutoSubscriptions(_configurationModel);
 		}
-		
+
 		void InitializeConnection(ConnectionFactory connectionFactory, TimeSpan timeout)
 		{
-			var timeoutInterval = TimeSpan.FromSeconds(10);
+			TimeSpan timeoutInterval = TimeSpan.FromSeconds(10);
 			IConnection connection = null;
 			var stopwatch = new Stopwatch();
 			stopwatch.Start();
 
-			while(connection == null)
+			while (connection == null)
 			{
 				Logger.Current.Write("Initializing connection ...", TraceEventType.Information);
 
@@ -196,13 +157,12 @@ namespace RabbitBus
 					((ConnectionBase) connection).m_session0.SessionShutdown += UnexpectedConnectionShutdown;
 					connection.CallbackException += ConnectionCallbackException;
 					_messagePublisher.SetConnection(connection);
-					_configurationModel.DefaultDeadLetterStrategy.SetConnection(connection);
 
 					Logger.Current.Write(new LogEntry
-					                     	{
-					                     		Message = string.Format("Connected to the RabbitMQ node on host:{0}, port:{1}.",
-					                     		                        connection.Endpoint.HostName, connection.Endpoint.Port)
-					                     	});
+						{
+							Message = string.Format("Connected to the RabbitMQ node on host:{0}, port:{1}.",
+							                        connection.Endpoint.HostName, connection.Endpoint.Port)
+						});
 
 					_connection = connection;
 					OnConnectionEstablished(EventArgs.Empty);
@@ -210,20 +170,23 @@ namespace RabbitBus
 				catch (BrokerUnreachableException)
 				{
 					OnConnectionFailed(EventArgs.Empty);
-					Logger.Current.Write(string.Format("The connection initialization failed because the RabbitMQ broker was unavailable. Reattempting connection in {0} seconds.",
-						timeoutInterval.Seconds), TraceEventType.Warning);
+					Logger.Current.Write(
+						string.Format(
+							"The connection initialization failed because the RabbitMQ broker was unavailable. Reattempting connection in {0} seconds.",
+							timeoutInterval.Seconds), TraceEventType.Warning);
 					TimeProvider.Current.Sleep(timeoutInterval);
 				}
 
-				if(stopwatch.Elapsed > timeout)
+				if (stopwatch.Elapsed > timeout)
 				{
 					break;
 				}
 			}
 
-			if(connection == null)
+			if (connection == null)
 			{
-				Logger.Current.Write("A connection to the RabbitMQ broker could not be established within the allotted time frame", TraceEventType.Critical);
+				Logger.Current.Write("A connection to the RabbitMQ broker could not be established within the allotted time frame",
+				                     TraceEventType.Critical);
 			}
 		}
 
@@ -235,7 +198,7 @@ namespace RabbitBus
 			lock (_connectionLock)
 			{
 				if (_closed) return;
-				if(Reconnect(TimeSpan.FromSeconds(10)))
+				if (Reconnect(TimeSpan.FromSeconds(10)))
 				{
 					RenewSubscriptions(_subscriptions.Values);
 					_messagePublisher.Flush();
@@ -290,7 +253,7 @@ namespace RabbitBus
 					Logger.Current.Write("Connection failed.", TraceEventType.Information);
 				}
 
-				if(stopwatch.Elapsed > _configurationModel.ReconnectionTimeout)
+				if (stopwatch.Elapsed > _configurationModel.ReconnectionTimeout)
 				{
 					Logger.Current.Write("Timeout elapsed for reconnection attempts.", TraceEventType.Error);
 					OnConnectionTimeout(EventArgs.Empty);
@@ -321,14 +284,14 @@ namespace RabbitBus
 			}
 		}
 
-		void SubscribeMessage<TMessage>(Action<IMessageContext<TMessage>> action, string routingKey, IDictionary arguments)
+		void SubscribeMessage<TMessage>(Action<IMessageContext<TMessage>> action, MessageProperties messageProperties)
 		{
 			IConsumeInfo routeInfo = _configurationModel.ConsumeRouteConfiguration.GetRouteInfo(typeof (TMessage));
-			var subscription = new Subscription<TMessage>(_connection, _configurationModel.DefaultDeadLetterStrategy,
+			var subscription = new Subscription<TMessage>(_connection, _configurationModel.DefaultDeadLetterConfiguration,
 			                                              _configurationModel.DefaultSerializationStrategy,
-			                                              routeInfo, routingKey, action, arguments, _defaultErrorCallback,
+			                                              routeInfo, messageProperties.RoutingKey, action, messageProperties.Headers, _defaultErrorCallback,
 			                                              _messagePublisher, SubscriptionType.Subscription, TimeSpan.MinValue);
-			_subscriptions.Add(new SubscriptionKey(typeof (TMessage), routingKey, arguments), subscription);
+			_subscriptions.Add(new SubscriptionKey(typeof (TMessage), messageProperties), subscription);
 			subscription.Start();
 		}
 
@@ -377,6 +340,5 @@ namespace RabbitBus
 				Close();
 				_disposed = true;
 			}
-		}
-	}
+		}}
 }

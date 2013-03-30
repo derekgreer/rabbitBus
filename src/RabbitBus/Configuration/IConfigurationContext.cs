@@ -9,10 +9,11 @@ namespace RabbitBus.Configuration
 		IConsumeConfigurationContext Consume<TMessage>();
 		IConfigurationContext WithDefaultSerializationStrategy(ISerializationStrategy serializationStrategy);
 		IConfigurationContext WithLogger(ILogger logger);
-		IConfigurationContext WithDeadLetterQueue();
-		IConfigurationContext WithDeadLetterQueue(string queueName);
 		IConfigurationContext WithConnectionUnavailableQueueStrategy(IQueueStrategy queueStrategy);
 		IConfigurationContext WithReconnectionAttemptInterval(TimeSpan timeSpan);
 		IConfigurationContext WithReconnectionAttemptTimeout(TimeSpan timeSpan);
+		IConfigurationContext WithDefaultDeadLetterExchange();
+		IConfigurationContext WithDefaultDeadLetterExchange(string deadLetterExchangeName);
+		IConfigurationContext WithDefaultDeadLetterExchange(string deadLetterExchangeName, string routingKey);
 	}
 }

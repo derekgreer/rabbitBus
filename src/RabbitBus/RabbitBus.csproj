@@ -51,7 +51,9 @@
     </Compile>
     <Compile Include="Configuration\AutoConfigurationModelBuilder.cs" />
     <Compile Include="Configuration\BinarySerializationStrategy.cs" />
+    <Compile Include="Configuration\DeadLetterConfiguration.cs" />
     <Compile Include="Configuration\DefaultDependencyResolver.cs" />
+    <Compile Include="Configuration\IDeadLetterConfiguration.cs" />
     <Compile Include="Configuration\IDependencyResolver.cs" />
     <Compile Include="Configuration\IMessage.cs" />
     <Compile Include="Configuration\MessageHandlerSubscrptionConvention.cs" />
@@ -60,7 +62,6 @@
     <Compile Include="Configuration\IConfigurationModel.cs" />
     <Compile Include="Configuration\IConsumeConfigurationContext.cs" />
     <Compile Include="Configuration\IConsumeInfo.cs" />
-    <Compile Include="Configuration\IDeadLetterStrategy.cs" />
     <Compile Include="Configuration\IErrorContext.cs" />
     <Compile Include="Configuration\IExchangeConfiguration.cs" />
     <Compile Include="Configuration\IExchangeInfo.cs" />
@@ -75,14 +76,12 @@
     <Compile Include="Configuration\Internal\ConfigurationModel.cs" />
     <Compile Include="Configuration\Internal\ConsumeConfigurationContext.cs" />
     <Compile Include="Configuration\Internal\ConsumeInfo.cs" />
-    <Compile Include="Configuration\Internal\DefaultDeadLetterStrategy.cs" />
     <Compile Include="Configuration\Internal\DefaultPublishRouteInfoLookupStrategy.cs" />
     <Compile Include="Configuration\Internal\DefaultConsumeRouteInfoLookupStrategy.cs" />
     <Compile Include="Configuration\Internal\EnumerableExtensions.cs" />
     <Compile Include="Configuration\Internal\ErrorContext.cs" />
     <Compile Include="Configuration\Internal\ExchangeInfo.cs" />
     <Compile Include="Configuration\Internal\MappingRouteInfoLookupStrategy.cs" />
-    <Compile Include="Configuration\Internal\NullDeadLetterStrategy.cs" />
     <Compile Include="Configuration\Internal\PublishConfigurationContext.cs" />
     <Compile Include="Configuration\Internal\PublishInfo.cs" />
     <Compile Include="Configuration\Internal\QueueInfo.cs" />
@@ -103,6 +102,7 @@
     <Compile Include="ISubscription.cs" />
     <Compile Include="MemoryQueueStrategy.cs" />
     <Compile Include="ITimeProvider.cs" />
+    <Compile Include="MessageProperties.cs" />
     <Compile Include="ThrowingQueueStrategy.cs" />
     <Compile Include="IBus.cs" />
     <Compile Include="IConsumerContext.cs" />
@@ -121,7 +121,15 @@
     <Compile Include="Subscription.cs" />
     <Compile Include="SubscriptionKey.cs" />
     <Compile Include="TimeProvider.cs" />
-    <Compile Include="Utilities\QueueBuilder.cs" />
+    <Compile Include="Utilities\Declare.cs" />
+    <Compile Include="Utilities\ExchangeDeclareContext.cs" />
+    <Compile Include="Utilities\ExchangeDeclareInfo.cs" />
+    <Compile Include="Utilities\IExchangeDeclareContext.cs" />
+    <Compile Include="Utilities\INegatableQueueDeclareContext.cs" />
+    <Compile Include="Utilities\INegatableExchangeDeclareContext.cs" />
+    <Compile Include="Utilities\IQueueDeclareInfo.cs" />
+    <Compile Include="Utilities\IQueueDeclareContext.cs" />
+    <Compile Include="Utilities\QueueDeclareInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

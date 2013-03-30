@@ -1,9 +1,7 @@
 using System;
-using ExpectedObjects;
 using Machine.Specifications;
 using Moq;
 using RabbitBus.Configuration;
-using RabbitBus.Configuration.Internal;
 using RabbitBus.Logging;
 using RabbitBus.Specs.Infrastructure;
 using RabbitBus.Specs.TestTypes;
@@ -28,12 +26,12 @@ namespace RabbitBus.Specs.Integration
 			{
 				_rabbitExchange = new RabbitExchange("localhost", ExchangeName, ExchangeType.Fanout);
 
-				_bus = new BusBuilder().Configure(ctx => ctx.WithDeadLetterQueue()
-																								.WithDefaultSerializationStrategy(new ErrorSerializationStrategy())
-																								.Consume<TestMessage>().WithExchange(SpecId, cfg => cfg.Fanout())
-																								.WithQueue(QueueName)
-																								.OnError(errorContext => { _callbackInvoked = true; })).Build();
-			
+				_bus = new BusBuilder().Configure(ctx => ctx //.WithDeadLetterQueue()
+					                                         .WithDefaultSerializationStrategy(new ErrorSerializationStrategy())
+					                                         .Consume<TestMessage>().WithExchange(SpecId, cfg => cfg.Fanout())
+					                                         .WithQueue(QueueName)
+					                                         .OnError(errorContext => { _callbackInvoked = true; })).Build();
+
 				_bus.Connect();
 
 				_bus.Subscribe(RabbitHandlers.EmptyHandler<TestMessage>());
@@ -44,6 +42,43 @@ namespace RabbitBus.Specs.Integration
 				_bus.Close();
 				_rabbitExchange.Close();
 			};
+
+		Because of = () => new Action(() => _rabbitExchange.Publish(new TestMessage(ExpectedMessage))).BlockUntil(() => _callbackInvoked)();
+
+		It should_invoke_callback_on_errors = () => _callbackInvoked.ShouldBeTrue();
+	}
+
+	[Integration]
+	[Subject("Error Handling")]
+	public class when_an_error_callback_is_configured_for_a_subscription_with_routing_key
+	{
+		const string SpecId = "B35D1739-E844-4743-8542-94EED8C0BE1A";
+		const string ExchangeName = SpecId;
+		const string QueueName = SpecId;
+		const string ExpectedMessage = SpecId;
+		static bool _callbackInvoked;
+		static RabbitExchange _rabbitExchange;
+		static Bus _bus;
+
+		Establish context = () =>
+		{
+			_rabbitExchange = new RabbitExchange("localhost", ExchangeName, ExchangeType.Fanout);
+
+			_bus = new BusBuilder().Configure(ctx => ctx .WithDefaultSerializationStrategy(new ErrorSerializationStrategy())
+														 .Consume<TestMessage>().WithExchange(SpecId, cfg => cfg.Fanout())
+														 .WithQueue(QueueName)
+														 .OnError(errorContext => { _callbackInvoked = true; })).Build();
+
+			_bus.Connect();
+
+			_bus.Subscribe(RabbitHandlers.EmptyHandler<TestMessage>());
+		};
+
+		Cleanup after = () =>
+		{
+			_bus.Close();
+			_rabbitExchange.Close();
+		};
 
 		Because of = () => new Action(() => _rabbitExchange.Publish(new TestMessage(ExpectedMessage))).BlockUntil(() => _callbackInvoked)();
 
@@ -71,15 +106,15 @@ namespace RabbitBus.Specs.Integration
 						ctx.WithLogger(new ConsoleLogger());
 						ctx.WithDefaultSerializationStrategy(new ErrorSerializationStrategy());
 						ctx.Consume<TestMessage>().WithExchange(SpecId, cfg => cfg.Fanout().Durable().Not.AutoDelete())
-							.WithQueue(SpecId, cfg => cfg.Durable().Not.AutoDelete())
-							.OnError(errorContext =>
-								{
-									Console.WriteLine("OnError callback");
-									errorContext.RejectMessage(false);
-									Console.WriteLine("Calling Close() ...");
-									//_bus.Close();
-									_callbackInvoked = true;
-								});
+						   .WithQueue(SpecId, cfg => cfg.Durable().Not.AutoDelete())
+						   .OnError(errorContext =>
+							   {
+								   Console.WriteLine("OnError callback");
+								   errorContext.RejectMessage(false);
+								   Console.WriteLine("Calling Close() ...");
+								   //_bus.Close();
+								   _callbackInvoked = true;
+							   });
 					}).Build();
 				_bus.Connect();
 
@@ -94,7 +129,9 @@ namespace RabbitBus.Specs.Integration
 				_rabbitQueue.Delete().Close();
 			};
 
-		Because of = () => new Action(() => _rabbitExchange.Publish(new TestMessage(ExpectedMessage))).BlockUntil(() => _callbackInvoked)();
+		Because of =
+			() =>
+			new Action(() => _rabbitExchange.Publish(new TestMessage(ExpectedMessage))).BlockUntil(() => _callbackInvoked)();
 
 		It should_not_requeue_the_message = () => _rabbitQueue.GetMessage<TestMessage>().ShouldBeNull();
 	}
@@ -115,13 +152,13 @@ namespace RabbitBus.Specs.Integration
 			{
 				var logSpy = new Mock<ILogger>();
 				logSpy.Setup(x => x.Write(Moq.It.IsAny<LogEntry>()))
-					.Callback<LogEntry>(e =>
-						{
-							if (e.Message.Contains("exception"))
-							{
-								_logMessageWritten = true;
-							}
-						});
+				      .Callback<LogEntry>(e =>
+					      {
+						      if (e.Message.Contains("exception"))
+						      {
+							      _logMessageWritten = true;
+						      }
+					      });
 
 				_rabbitExchange = new RabbitExchange("localhost", SpecId, ExchangeType.Fanout, true, false);
 				_rabbitQueue = new RabbitQueue("localhost", SpecId, ExchangeType.Fanout, SpecId, true, false, true, false);
@@ -130,12 +167,12 @@ namespace RabbitBus.Specs.Integration
 				_bus = new BusBuilder().Configure(ctx =>
 					{
 						ctx.WithLogger(logSpy.Object)
-							.WithDefaultSerializationStrategy(new ErrorSerializationStrategy());
+						   .WithDefaultSerializationStrategy(new ErrorSerializationStrategy());
 						ctx.Consume<TestMessage>()
-							.WithExchange(SpecId, cfg => cfg.Fanout().Durable().Not.AutoDelete())
-							.WithQueue(SpecId, cfg => cfg.Durable().Not.AutoDelete());
+						   .WithExchange(SpecId, cfg => cfg.Fanout().Durable().Not.AutoDelete())
+						   .WithQueue(SpecId, cfg => cfg.Durable().Not.AutoDelete());
 					}).Build();
-				
+
 				_bus.Connect();
 
 				_bus.Subscribe(RabbitHandlers.EmptyHandler<TestMessage>());
@@ -156,7 +193,7 @@ namespace RabbitBus.Specs.Integration
 		It should_reject_without_requeuing_the_message =
 			() => _rabbitQueue.GetMessage<TestMessage>(new BinarySerializationStrategy(), false).ShouldBeNull();
 
-		It should_publish_the_rejected_message_to_the_dead_letter_queue =
-			() => new TestMessage(ExpectedMessage).ToExpectedObject().ShouldEqual(_deadLetterQueue.GetMessage<TestMessage>());
+		It should_not_publish_the_rejected_message_to_the_dead_letter_exchange =
+			() => _deadLetterQueue.GetMessage<TestMessage>().ShouldBeNull();
 	}
 }

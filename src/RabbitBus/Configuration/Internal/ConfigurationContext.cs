@@ -40,18 +40,6 @@ namespace RabbitBus.Configuration.Internal
 			return this;
 		}
 
-		public IConfigurationContext WithDeadLetterQueue()
-		{
-			ConfigurationModel.DefaultDeadLetterStrategy = new DefaultDeadLetterStrategy();
-			return this;
-		}
-
-		public IConfigurationContext WithDeadLetterQueue(string queueName)
-		{
-			ConfigurationModel.DefaultDeadLetterStrategy = new DefaultDeadLetterStrategy(queueName);
-			return this;
-		}
-
 		public IConfigurationContext WithConnectionUnavailableQueueStrategy(IQueueStrategy queueStrategy)
 		{
 			ConfigurationModel.ConnectionDownQueueStrategy = queueStrategy;
@@ -67,6 +55,22 @@ namespace RabbitBus.Configuration.Internal
 		public IConfigurationContext WithReconnectionAttemptTimeout(TimeSpan timeSpan)
 		{
 			ConfigurationModel.ReconnectionTimeout = timeSpan;
+			return this;
+		}
+
+		public IConfigurationContext WithDefaultDeadLetterExchange()
+		{
+			return WithDefaultDeadLetterExchange("deadletter");
+		}
+
+		public IConfigurationContext WithDefaultDeadLetterExchange(string deadLetterExchangeName)
+		{
+			return WithDefaultDeadLetterExchange(deadLetterExchangeName, null);
+		}
+
+		public IConfigurationContext WithDefaultDeadLetterExchange(string deadLetterExchangeName, string routingKey)
+		{
+			ConfigurationModel.DefaultDeadLetterConfiguration = new DeadLetterConfiguration(deadLetterExchangeName, routingKey);
 			return this;
 		}
 	}

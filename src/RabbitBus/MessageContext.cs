@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using RabbitBus.Configuration;
-using RabbitBus.Configuration.Internal;
 using RabbitBus.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Framing.v0_9_1;
@@ -28,14 +27,12 @@ namespace RabbitBus
 		readonly byte[] _body;
 		readonly IModel _channel;
 		readonly IConsumeInfo _consumeInfo;
-		readonly IDeadLetterStrategy _deadLetterStrategy;
 		readonly IMessagePublisher _messagePublisher;
 
-		public MessageContext(IDeadLetterStrategy deadLetterStrategy, TMessage message, IConsumeInfo consumeInfo,
+		public MessageContext(TMessage message, IConsumeInfo consumeInfo,
 		                      IModel channel, ulong deliveryTag, bool redelivered, string exchange, string routingKey,
 		                      IBasicProperties basicProperties, byte[] body, IMessagePublisher messagePublisher)
 		{
-			_deadLetterStrategy = deadLetterStrategy;
 			_consumeInfo = consumeInfo;
 			_channel = channel;
 			Id = deliveryTag;
@@ -84,10 +81,6 @@ namespace RabbitBus
 		{
 			try
 			{
-				if (!requeue)
-				{
-					_deadLetterStrategy.Publish(_basicProperties, _body);
-				}
 				_channel.BasicNack(Id, false, requeue);
 			}
 			catch (Exception e)
