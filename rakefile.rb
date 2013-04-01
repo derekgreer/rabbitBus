@@ -10,18 +10,15 @@ ARTIFACTS_PATH = File.expand_path('artifacts')
 LIB_PATH = File.expand_path('lib')
 SOLUTION = 'src/RabbitBus.sln'
 COMPILE_TARGET = 'Release'
-NUGET_CACHE= File.join(ENV['LOCALAPPDATA'], '/NuGet/Cache/')
-FEEDS = ['https://go.microsoft.com/fwlink/?LinkID=206669' ]
 nuget = 'nuget'
 SHELL_DEPENDENCIES = ['nuget.exe']
 load 'VERSION.txt'
-load 'packages.rb'
 if(ENV['BUILD_NUMBER']) then VERSION="#{VERSION}" + '.' + ENV['BUILD_NUMBER'] end
 
 
 task :default => ["all"]
 
-task :all => [:verify, :clean, :dependencies, :compile, :specs, :package]
+task :all => [:verify, :clean, :compile, :specs, :package]
 
 task :verify do
 	
@@ -61,22 +58,6 @@ task :package do
 	rm Dir.glob("#{ARTIFACTS_PATH}/*.nupkg")
 	FileList["packaging/nuget/*.nuspec"].each do |spec|
 		sh "#{nuget} pack #{spec} -o #{ARTIFACTS_PATH} -Version #{VERSION} -Symbols -BasePath ."
-	end
-end
-
-task :dependencies do
-	feeds = FEEDS.map {|x|"-Source " + x }.join(' ')
-	configatron.packages.each do | name,version |
-		packageFeeds = "-Source #{NUGET_CACHE} " + feeds unless !version
-		packageExists = File.directory?("#{LIB_PATH}/#{name}")
-		versionInfo="#{LIB_PATH}/#{name}/version.info"
-		currentVersion=IO.read(versionInfo) if File.exists?(versionInfo)
-		if(!packageExists or !version or !versionInfo or currentVersion != version) then
-			versionArg = "-Version #{version}" unless !version
-			sh "nuget Install #{name} #{versionArg} -o #{LIB_PATH} #{packageFeeds} -ExcludeVersion" do | ok, results |
-				File.open(versionInfo, 'w') {|f| f.write(version) } unless !ok
-			end
-		end
 	end
 end
 

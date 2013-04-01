@@ -1,11 +1,18 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitBus", "RabbitBus\RabbitBus.csproj", "{3EF0821B-4900-42E9-9610-A6F29362C825}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitBus.Specs", "RabbitBus.Specs\RabbitBus.Specs.csproj", "{8331C0C3-5E94-4E7C-9C45-2223CC4C83C5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitBus.Serialization.Json", "RabbitBus.Serialization.Json\RabbitBus.Serialization.Json.csproj", "{90717B24-C20C-4662-8695-6C485982343C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{98A5BD9B-AEA5-4050-9460-C46C699D3262}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.Config = .nuget\NuGet.Config
+		.nuget\NuGet.exe = .nuget\NuGet.exe
+		.nuget\NuGet.targets = .nuget\NuGet.targets
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

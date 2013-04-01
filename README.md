@@ -21,3 +21,8 @@ The RabbitBus distribution has the following dependencies:
 ## MIT License
 
 RabbitBus is released under the [MIT License](https://github.com/derekgreer/rabbitBus/blob/master/LICENSE.txt).
+
+## How To Contribute
+
+Contributions are welcome, but will not be accepted without corresponding executable specifications.
+It should go without saying, but pull requests which contain changes which break existing specifications will not be accepted.
