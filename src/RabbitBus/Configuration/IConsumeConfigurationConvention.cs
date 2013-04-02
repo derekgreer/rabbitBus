@@ -18,5 +18,7 @@ namespace RabbitBus.Configuration
 		ISerializationStrategy GetSerializationStrategy(Type type);
 		Action<IErrorContext> GetErrorCallback(Type type);
 		ushort GetQualityOfService(Type type);
+		string GetDeadLetterExchangeName(Type type);
+		string GetDeadLetterRoutingKey(Type type);
 	}
 }

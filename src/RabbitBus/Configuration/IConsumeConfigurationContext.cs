@@ -11,5 +11,7 @@ namespace RabbitBus.Configuration
 		IConsumeConfigurationContext WithDefaultRoutingKey(string routingKey);
 		IConsumeConfigurationContext WithSerializationStrategy(ISerializationStrategy serializationStrategy);
 		IConsumeConfigurationContext OnError(Action<IErrorContext> callback);
+		IConsumeConfigurationContext WithDeadLetterExchange(string exchange);
+		IConsumeConfigurationContext WithDeadLetterRoutingKey(string routingKey);
 	}
 }

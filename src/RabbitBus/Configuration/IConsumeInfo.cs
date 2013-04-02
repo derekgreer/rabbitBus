@@ -17,5 +17,7 @@ namespace RabbitBus.Configuration
 		ISerializationStrategy SerializationStrategy { get; set; }
 		Action<IErrorContext> ErrorCallback { get; set; }
 		ushort QualityOfService { get; set; }
+		string DeadLetterExchangeName { get; set; }
+		string DeadLetterRoutingKey { get; set; }
 	}
 }

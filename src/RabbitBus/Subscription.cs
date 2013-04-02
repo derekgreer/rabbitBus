@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -63,8 +64,19 @@ namespace RabbitBus
                                             _consumeInfo.IsExchangeDurable,
                                             _consumeInfo.IsExchangeAutoDelete, null);
                 }
+
+                var queueDeclareArgs = new Dictionary<string, string>();
+                if (!string.IsNullOrEmpty(_consumeInfo.DeadLetterExchangeName))
+                {
+                    queueDeclareArgs.Add("x-dead-letter-exchange", _consumeInfo.DeadLetterExchangeName);
+                }
+                if (!string.IsNullOrEmpty(_consumeInfo.DeadLetterRoutingKey))
+                {
+                    queueDeclareArgs.Add("x-dead-letter-routing-key", _consumeInfo.DeadLetterRoutingKey);
+                }
                 channel.QueueDeclare(_consumeInfo.QueueName, _consumeInfo.IsQueueDurable, _consumeInfo.Exclusive,
-                                     _consumeInfo.IsQueueAutoDelete, _exchangeArguments);
+                                     _consumeInfo.IsQueueAutoDelete, queueDeclareArgs);
+
                 if (_consumeInfo.ExchangeName != string.Empty)
                 {
                     channel.QueueBind(_consumeInfo.QueueName, _consumeInfo.ExchangeName, _routingKey, _exchangeArguments);
@@ -222,7 +234,7 @@ namespace RabbitBus
             try
             {
                 Action<IErrorContext> errorCallback = _consumeInfo.ErrorCallback ?? _defaultErrorCallback;
-                errorCallback(new ErrorContext(channel, eventArgs));
+                errorCallback(new ErrorContext(channel, eventArgs, _deadLetterStrategy));
             }
             catch (Exception exception)
             {
