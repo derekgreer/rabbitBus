@@ -9,5 +9,7 @@ namespace RabbitBus
 		public string RoutingKey { get; set; }
 
 		public IDictionary Headers { get; set; }
+
+        public int? Expiration { get; set; }
 	}
 }

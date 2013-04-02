@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using RabbitBus.Configuration;
@@ -12,6 +13,8 @@ namespace RabbitBus
 {
 	class MessagePublisher : IMessagePublisher
 	{
+		private readonly List<ISubscription> _callbackSubscriptions;
+		private readonly object _callbacksLock = new object();
 		readonly IRouteConfiguration<IConsumeInfo> _consumeRouteConfiguration;
 		readonly ISerializationStrategy _defaultSerializationStrategy;
 		readonly IRouteConfiguration<IPublishInfo> _publishRouteConfiguration;
@@ -21,16 +24,17 @@ namespace RabbitBus
 		IConnection _connection;
 
 		public MessagePublisher(string userName,
-		                        IRouteConfiguration<IPublishInfo> publishRouteConfiguration,
-		                        IRouteConfiguration<IConsumeInfo> consumeRouteConfiguration,
-		                        ISerializationStrategy defaultSerializationStrategy,
-		                        IQueueStrategy queueStrategy)
+								IRouteConfiguration<IPublishInfo> publishRouteConfiguration,
+								IRouteConfiguration<IConsumeInfo> consumeRouteConfiguration,
+								ISerializationStrategy defaultSerializationStrategy,
+								IQueueStrategy queueStrategy)
 		{
 			_userName = userName;
 			_publishRouteConfiguration = publishRouteConfiguration;
 			_consumeRouteConfiguration = consumeRouteConfiguration;
 			_defaultSerializationStrategy = defaultSerializationStrategy;
 			_queueStrategy = queueStrategy;
+			_callbackSubscriptions = new List<ISubscription>();
 		}
 
 		public void Flush()
@@ -38,7 +42,7 @@ namespace RabbitBus
 			while (_queueStrategy.Count != 0)
 			{
 				MessageInfo messageInfo = _queueStrategy.Dequeue();
-				PublishMessage(messageInfo.Message, messageInfo.RoutingKey, messageInfo.Headers, null);
+				PublishMessage(messageInfo.Message, messageInfo.RoutingKey, messageInfo.Headers, messageInfo.Expiration, null);
 			}
 		}
 
@@ -47,19 +51,19 @@ namespace RabbitBus
 			_connection = connection;
 		}
 
-		public void Publish(object message, string routingKey, IDictionary headers)
+		public void Publish(object message, string routingKey, IDictionary headers, int? expiration)
 		{
 			try
 			{
 				if (_connection != null && _connection.IsOpen)
 				{
 					Flush();
-					PublishMessage(message, routingKey, headers, null);
+					PublishMessage(message, routingKey, headers, expiration, null);
 				}
 				else
 				{
 					lock (_queueLock)
-						_queueStrategy.Enqueue(new MessageInfo {Message = message, RoutingKey = routingKey, Headers = headers});
+						_queueStrategy.Enqueue(new MessageInfo { Message = message, RoutingKey = routingKey, Headers = headers, Expiration = expiration });
 				}
 			}
 			catch (Exception e)
@@ -69,13 +73,13 @@ namespace RabbitBus
 			}
 		}
 
-		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage message, string routingKey, IDictionary headers,
-		                                                    Action<IMessageContext<TReplyMessage>> replyAction,
-		                                                    TimeSpan timeout)
+		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage message, string routingKey, IDictionary headers, int? expiration,
+															Action<IMessageContext<TReplyMessage>> replyAction,
+															TimeSpan timeout)
 		{
 			try
 			{
-				PublishMessage(message, routingKey, headers, replyAction, timeout);
+				PublishMessage(message, routingKey, headers, expiration, replyAction, timeout);
 			}
 			catch (Exception e)
 			{
@@ -85,37 +89,41 @@ namespace RabbitBus
 
 
 		public void PublishReply<TRequestMessage, TReplyMessage>(PublicationAddress publicationAddress,
-		                                                         TReplyMessage replyMessage,
-		                                                         IBasicProperties replyProperties)
+																 TReplyMessage replyMessage,
+																 IBasicProperties replyProperties)
 		{
 			IModel channel = _connection.CreateModel();
 			if (publicationAddress.ExchangeName != string.Empty)
 			{
 				channel.ExchangeDeclare(publicationAddress.ExchangeName, publicationAddress.ExchangeType, false, true, null);
 			}
-			IConsumeInfo consumeInfo = _consumeRouteConfiguration.GetRouteInfo(typeof (TRequestMessage));
+			IConsumeInfo consumeInfo = _consumeRouteConfiguration.GetRouteInfo(typeof(TRequestMessage));
 			ISerializationStrategy serializationStrategy = consumeInfo.SerializationStrategy ?? _defaultSerializationStrategy;
 			byte[] bytes = serializationStrategy.Serialize(replyMessage);
 			channel.BasicPublish(publicationAddress, replyProperties, bytes);
 			channel.Close();
 
 			string log = string.Format("Published reply message to host: {0}, port: {1}, exchange: {2}, routingKey: {3}",
-			                           _connection.Endpoint.HostName,
-			                           _connection.Endpoint.Port,
-			                           publicationAddress.ExchangeName,
-			                           publicationAddress.RoutingKey);
+									   _connection.Endpoint.HostName,
+									   _connection.Endpoint.Port,
+									   publicationAddress.ExchangeName,
+									   publicationAddress.RoutingKey);
 
 			Logger.Current.Write(log, TraceEventType.Information);
 		}
 
-		void PublishMessage(object message, string routingKey, IDictionary headers,
-		                    Action<IBasicProperties, IPublishInfo> replyAction)
+		void PublishMessage(object message, string routingKey, IDictionary headers, int? expiration,
+							Action<IBasicProperties, IPublishInfo> replyAction)
 		{
 			IPublishInfo publishInfo = _publishRouteConfiguration.GetRouteInfo(message.GetType());
 			IModel channel = _connection.CreateModel();
-			channel.ExchangeDeclare(publishInfo.ExchangeName, publishInfo.ExchangeType,
-			                        publishInfo.IsDurable,
-			                        publishInfo.IsAutoDelete, null);
+			if (publishInfo.ExchangeName != string.Empty)
+			{
+				// only declare if not default exchange
+				channel.ExchangeDeclare(publishInfo.ExchangeName, publishInfo.ExchangeType,
+										publishInfo.IsDurable,
+										publishInfo.IsAutoDelete, null);
+			}
 			ISerializationStrategy serializationStrategy = publishInfo.SerializationStrategy ?? _defaultSerializationStrategy;
 			byte[] bytes = serializationStrategy.Serialize(message);
 
@@ -126,6 +134,11 @@ namespace RabbitBus
 			if (messageHeaders.Count != 0)
 			{
 				properties.Headers = messageHeaders;
+			}
+
+			if (expiration >= 0)
+			{
+				properties.Expiration = expiration.ToString();
 			}
 
 			properties.SetPersistent(publishInfo.IsPersistent);
@@ -142,19 +155,19 @@ namespace RabbitBus
 			channel.Close();
 
 			string log = string.Format("Published message to host: {0}, port: {1}, exchange: {2}, routingKey: {3}",
-			                           _connection.Endpoint.HostName,
-			                           _connection.Endpoint.Port,
-			                           publishInfo.ExchangeName,
-			                           routingKey);
+									   _connection.Endpoint.HostName,
+									   _connection.Endpoint.Port,
+									   publishInfo.ExchangeName,
+									   routingKey);
 
 			Logger.Current.Write(log, TraceEventType.Information);
 		}
 
-		void PublishMessage<TRequestMessage, TReplyMessage>(TRequestMessage message, string routingKey, IDictionary headers,
-		                                                    Action<IMessageContext<TReplyMessage>> replyAction,
-		                                                    TimeSpan timeout)
+		void PublishMessage<TRequestMessage, TReplyMessage>(TRequestMessage message, string routingKey, IDictionary headers, int? expiration,
+															Action<IMessageContext<TReplyMessage>> replyAction,
+															TimeSpan timeout)
 		{
-			PublishMessage(message, routingKey, headers, (p, pi) =>
+			PublishMessage(message, routingKey, headers, expiration, (p, pi) =>
 				{
 					IConsumeInfo replyInfo = pi.ReplyInfo;
 					string queueName = Guid.NewGuid().ToString();
@@ -167,18 +180,36 @@ namespace RabbitBus
 					consumeInfo.QueueName = queueName;
 					consumeInfo.Exclusive = true;
 
-					new Subscription<TReplyMessage>(_connection,
-					                                new DefaultDeadLetterStrategy(),
-					                                serializationStrategy,
-					                                consumeInfo,
-					                                queueName /* routing key */,
-					                                replyAction,
-					                                null,
-					                                x => { },
-					                                this,
-					                                SubscriptionType.RemoteProcedure,
-					                                timeout).Start();
+					var sub = new Subscription<TReplyMessage>(_connection,
+								new DefaultDeadLetterStrategy(),
+								serializationStrategy,
+								consumeInfo,
+								queueName /* routing key */,
+								replyAction,
+								null,
+								x => { },
+								this,
+								SubscriptionType.RemoteProcedure,
+								timeout);
+
+					// for prevent subscription to be GC'ed
+					sub.Stopped += CallbackSubscriptionStopped;
+
+					lock (_callbacksLock)
+					{
+						_callbackSubscriptions.Add(sub);
+					}
+
+					sub.Start();
 				});
+		}
+
+		void CallbackSubscriptionStopped(object sender, EventArgs e)
+		{
+			lock (_callbacksLock)
+			{
+				_callbackSubscriptions.Remove((ISubscription)sender);
+			}
 		}
 
 		static ListDictionary GetHeaders(IDictionary headers, IDictionary defaultHeaders)
@@ -206,21 +237,21 @@ namespace RabbitBus
 		IConsumeInfo CloneConsumeInfo(IConsumeInfo consumeInfo)
 		{
 			return new ConsumeInfo
-			       	{
-			       		ExchangeName = consumeInfo.ExchangeName,
-			       		QueueName = consumeInfo.QueueName,
-			       		DefaultRoutingKey = consumeInfo.DefaultRoutingKey,
-			       		Exclusive = consumeInfo.Exclusive,
-			       		IsAutoAcknowledge = consumeInfo.IsAutoAcknowledge,
-			       		IsQueueAutoDelete = consumeInfo.IsQueueAutoDelete,
-			       		IsExchangeAutoDelete = consumeInfo.IsExchangeAutoDelete,
-			       		IsQueueDurable = consumeInfo.IsQueueDurable,
-			       		IsExchangeDurable = consumeInfo.IsExchangeDurable,
-			       		ExchangeType = consumeInfo.ExchangeType,
-			       		SerializationStrategy = consumeInfo.SerializationStrategy,
-			       		ErrorCallback = consumeInfo.ErrorCallback,
-			       		QualityOfService = consumeInfo.QualityOfService
-			       	};
+					{
+						ExchangeName = consumeInfo.ExchangeName,
+						QueueName = consumeInfo.QueueName,
+						DefaultRoutingKey = consumeInfo.DefaultRoutingKey,
+						Exclusive = consumeInfo.Exclusive,
+						IsAutoAcknowledge = consumeInfo.IsAutoAcknowledge,
+						IsQueueAutoDelete = consumeInfo.IsQueueAutoDelete,
+						IsExchangeAutoDelete = consumeInfo.IsExchangeAutoDelete,
+						IsQueueDurable = consumeInfo.IsQueueDurable,
+						IsExchangeDurable = consumeInfo.IsExchangeDurable,
+						ExchangeType = consumeInfo.ExchangeType,
+						SerializationStrategy = consumeInfo.SerializationStrategy,
+						ErrorCallback = consumeInfo.ErrorCallback,
+						QualityOfService = consumeInfo.QualityOfService
+					};
 		}
 	}
 }

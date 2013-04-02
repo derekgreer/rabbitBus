@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
+using System.Threading.Tasks;
 using RabbitBus.Configuration;
 using RabbitBus.Configuration.Internal;
 using RabbitBus.Logging;
@@ -27,8 +27,10 @@ namespace RabbitBus
         readonly SubscriptionType _subscriptionType;
         IConnection _connection;
         QueueingBasicConsumer _consumer;
-        Thread _thread;
+        private Task _task;
         bool _threadCancelled;
+
+        public event EventHandler Stopped;
 
         public Subscription(IConnection connection, IDeadLetterStrategy deadLetterStrategy,
                             ISerializationStrategy defaultSerializationStrategy, IConsumeInfo consumeInfo,
@@ -73,8 +75,8 @@ namespace RabbitBus
                 _consumer = new QueueingBasicConsumer(channel);
                 channel.BasicQos(0, _consumeInfo.QualityOfService, false);
                 channel.BasicConsume(_consumeInfo.QueueName, _consumeInfo.IsAutoAcknowledge, _consumer);
-                _thread = new Thread(() => Subscribe(channel));
-                _thread.Start();
+                _task = new Task(() => Subscribe(channel));
+                _task.Start();
 
                 string log =
                     string.Format(
@@ -84,7 +86,7 @@ namespace RabbitBus
                         _consumeInfo.ExchangeName,
                         _consumeInfo.QueueName,
                         _routingKey);
-                Logger.Current.Write(new LogEntry {Message = log});
+                Logger.Current.Write(new LogEntry { Message = log });
             }
             catch (Exception e)
             {
@@ -105,9 +107,10 @@ namespace RabbitBus
                     _routingKey);
             Logger.Current.Write(log, TraceEventType.Information);
             _threadCancelled = true;
-            _thread.Join();
+            if (_task != null)
+                _task.Wait();
             _threadCancelled = false;
-            _thread = null;
+            _task = null;
         }
 
         public void Renew(IConnection connection)
@@ -143,18 +146,16 @@ namespace RabbitBus
 
                 try
                 {
-                    object eArgs = null;
-                    _consumer.Queue.Dequeue(1000, out eArgs);
-
-                    if (eArgs != null)
+                    object eArgs;                   
+                    if (_consumer.Queue.Dequeue(1000, out eArgs))
                     {
-                        eventArgs = (BasicDeliverEventArgs) eArgs;
+                        eventArgs = (BasicDeliverEventArgs)eArgs;
                         logger.Write(string.Format("Message received: {0} bytes", eventArgs.Body.Length), TraceEventType.Information);
                         ISerializationStrategy serializationStrategy = _consumeInfo.SerializationStrategy ??
                                                                        _defaultSerializationStrategy;
                         object message = serializationStrategy.Deserialize<TMessage>(eventArgs.Body);
 
-                        var messageContext = new MessageContext<TMessage>(_deadLetterStrategy, (TMessage) message,
+                        var messageContext = new MessageContext<TMessage>(_deadLetterStrategy, (TMessage)message,
                                                                           _consumeInfo,
                                                                           channel,
                                                                           eventArgs.DeliveryTag, eventArgs.Redelivered,
@@ -199,6 +200,22 @@ namespace RabbitBus
                     Logger.Current.Write("An exception occurred while dequeuing a message: " + e.Message, TraceEventType.Error);
                     InvokeErrorCallback(eventArgs, channel);
                 }
+            }
+
+            // cleaning channel
+            if (channel != null && channel.IsOpen)
+            {
+                channel.Close();
+            }
+
+            OnStopped();
+        }
+
+        protected void OnStopped()
+        {
+            if (Stopped != null)
+            {
+                Stopped(this, new EventArgs());
             }
         }
 
