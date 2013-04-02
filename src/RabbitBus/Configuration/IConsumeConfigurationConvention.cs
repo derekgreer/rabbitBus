@@ -19,5 +19,6 @@ namespace RabbitBus.Configuration
 		Action<IErrorContext> GetErrorCallback(Type type);
 		ushort GetQualityOfService(Type type);
 		string GetDeadLetterExchangeName(Type type);
+		string GetDeadLetterRoutingKey(Type type);
 	}
 }

@@ -18,5 +18,6 @@ namespace RabbitBus.Configuration
 		Action<IErrorContext> ErrorCallback { get; set; }
 		ushort QualityOfService { get; set; }
 		string DeadLetterExchangeName { get; set; }
+		string DeadLetterRoutingKey { get; set; }
 	}
 }

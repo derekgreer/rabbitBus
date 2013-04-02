@@ -70,5 +70,10 @@ namespace RabbitBus.Configuration
 		{
 			return null;
 		}
+
+		public string GetDeadLetterRoutingKey(Type type)
+		{
+			return null;
+		}
 	}
 }

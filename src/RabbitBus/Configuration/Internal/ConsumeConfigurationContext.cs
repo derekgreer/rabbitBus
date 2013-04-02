@@ -75,6 +75,12 @@ namespace RabbitBus.Configuration.Internal
 			return this;
 		}
 
+		public IConsumeConfigurationContext WithDeadLetterRoutingKey(string routingKey)
+		{
+			ConsumeInfo.DeadLetterRoutingKey = routingKey;
+			return this;
+		}
+
 		public IConsumeInfo ConsumeInfo { get; private set; }
 	}
 }

@@ -70,6 +70,10 @@ namespace RabbitBus
                 {
                     queueDeclareArgs.Add("x-dead-letter-exchange", _consumeInfo.DeadLetterExchangeName);
                 }
+                if (!string.IsNullOrEmpty(_consumeInfo.DeadLetterRoutingKey))
+                {
+                    queueDeclareArgs.Add("x-dead-letter-routing-key", _consumeInfo.DeadLetterRoutingKey);
+                }
                 channel.QueueDeclare(_consumeInfo.QueueName, _consumeInfo.IsQueueDurable, _consumeInfo.Exclusive,
                                      _consumeInfo.IsQueueAutoDelete, queueDeclareArgs);
 
