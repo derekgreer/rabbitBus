@@ -49,6 +49,7 @@
     <Compile Include="..\CommonAssemblyInfo.cs">
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="BusExtensions.cs" />
     <Compile Include="Configuration\AutoConfigurationModelBuilder.cs" />
     <Compile Include="Configuration\BinarySerializationStrategy.cs" />
     <Compile Include="Configuration\DeadLetterConfiguration.cs" />
