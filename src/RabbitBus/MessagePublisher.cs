@@ -22,11 +22,11 @@ namespace RabbitBus
 		IConnection _connection;
 
 		public MessagePublisher(string userName,
-		                        IDeadLetterConfiguration defaultDeadLetterConfiguration,
-		                        IRouteConfiguration<IPublishInfo> publishRouteConfiguration,
-		                        IRouteConfiguration<IConsumeInfo> consumeRouteConfiguration,
-		                        ISerializationStrategy defaultSerializationStrategy,
-		                        IQueueStrategy queueStrategy)
+								IDeadLetterConfiguration defaultDeadLetterConfiguration,
+								IRouteConfiguration<IPublishInfo> publishRouteConfiguration,
+								IRouteConfiguration<IConsumeInfo> consumeRouteConfiguration,
+								ISerializationStrategy defaultSerializationStrategy,
+								IQueueStrategy queueStrategy)
 		{
 			_userName = userName;
 			_defaultDeadLetterConfiguration = defaultDeadLetterConfiguration;
@@ -74,8 +74,8 @@ namespace RabbitBus
 		}
 
 		public void Publish<TRequestMessage, TReplyMessage>(TRequestMessage message, MessageProperties messageProperties,
-		                                                    Action<IMessageContext<TReplyMessage>> replyAction,
-		                                                    TimeSpan timeout)
+															Action<IMessageContext<TReplyMessage>> replyAction,
+															TimeSpan timeout)
 		{
 			try
 			{
@@ -89,8 +89,8 @@ namespace RabbitBus
 
 
 		public void PublishReply<TRequestMessage, TReplyMessage>(PublicationAddress publicationAddress,
-		                                                         TReplyMessage replyMessage,
-		                                                         IBasicProperties replyProperties)
+																 TReplyMessage replyMessage,
+																 IBasicProperties replyProperties)
 		{
 			IModel channel = _connection.CreateModel();
 			if (publicationAddress.ExchangeName != string.Empty)
@@ -104,22 +104,22 @@ namespace RabbitBus
 			channel.Close();
 
 			string log = string.Format("Published reply message to host: {0}, port: {1}, exchange: {2}, routingKey: {3}",
-			                           _connection.Endpoint.HostName,
-			                           _connection.Endpoint.Port,
-			                           publicationAddress.ExchangeName,
-			                           publicationAddress.RoutingKey);
+									   _connection.Endpoint.HostName,
+									   _connection.Endpoint.Port,
+									   publicationAddress.ExchangeName,
+									   publicationAddress.RoutingKey);
 
 			Logger.Current.Write(log, TraceEventType.Information);
 		}
 
 		void PublishMessage(object message, MessageProperties messageProperties,
-		                    Action<IBasicProperties, IPublishInfo> replyAction)
+							Action<IBasicProperties, IPublishInfo> replyAction)
 		{
 			IPublishInfo publishInfo = _publishRouteConfiguration.GetRouteInfo(message.GetType());
 			IModel channel = _connection.CreateModel();
 			channel.ExchangeDeclare(publishInfo.ExchangeName, publishInfo.ExchangeType,
-			                        publishInfo.IsDurable,
-			                        publishInfo.IsAutoDelete, null);
+									publishInfo.IsDurable,
+									publishInfo.IsAutoDelete, null);
 			ISerializationStrategy serializationStrategy = publishInfo.SerializationStrategy ?? _defaultSerializationStrategy;
 			byte[] bytes = serializationStrategy.Serialize(message);
 
@@ -137,7 +137,7 @@ namespace RabbitBus
 			properties.ContentEncoding = serializationStrategy.ContentEncoding;
 			if (publishInfo.IsSigned)
 				properties.UserId = _userName;
-			properties.CorrelationId = Guid.NewGuid().ToString();
+			properties.CorrelationId = messageProperties.CorrelationId ?? Guid.NewGuid().ToString();
 
 			if (messageProperties.Expiration.HasValue)
 			{
@@ -154,28 +154,28 @@ namespace RabbitBus
 			}
 
 			channel.BasicPublish(publishInfo.ExchangeName, messageProperties.RoutingKey ?? publishInfo.DefaultRoutingKey,
-			                     properties, bytes);
+								 properties, bytes);
 			channel.Close();
 
 			string log = string.Format("Published message to host: {0}, port: {1}, exchange: {2}, routingKey: {3}",
-			                           _connection.Endpoint.HostName,
-			                           _connection.Endpoint.Port,
-			                           publishInfo.ExchangeName,
-			                           messageProperties.RoutingKey);
+									   _connection.Endpoint.HostName,
+									   _connection.Endpoint.Port,
+									   publishInfo.ExchangeName,
+									   messageProperties.RoutingKey ?? publishInfo.DefaultRoutingKey);
 
 			Logger.Current.Write(log, TraceEventType.Information);
 		}
 
 		void PublishMessage<TRequestMessage, TReplyMessage>(TRequestMessage message, MessageProperties messageProperties,
-		                                                    Action<IMessageContext<TReplyMessage>> replyAction,
-		                                                    TimeSpan timeout)
+															Action<IMessageContext<TReplyMessage>> replyAction,
+															TimeSpan timeout)
 		{
 			PublishMessage(message, messageProperties, (p, pi) =>
 				{
 					IConsumeInfo replyInfo = pi.ReplyInfo;
 					string queueName = Guid.NewGuid().ToString();
 					p.ReplyTo = new PublicationAddress(replyInfo.ExchangeType, "", queueName).ToString();
-					p.CorrelationId = Guid.NewGuid().ToString();
+					p.CorrelationId = messageProperties.CorrelationId ?? Guid.NewGuid().ToString();
 					ISerializationStrategy serializationStrategy = pi.SerializationStrategy ?? _defaultSerializationStrategy;
 
 					IConsumeInfo consumeInfo = CloneConsumeInfo(replyInfo);
@@ -184,16 +184,16 @@ namespace RabbitBus
 					consumeInfo.IsQueueExclusive = true;
 
 					new Subscription<TReplyMessage>(_connection,
-					                                _defaultDeadLetterConfiguration,
-					                                serializationStrategy,
-					                                consumeInfo,
-					                                queueName /* routing key */,
-					                                replyAction,
-					                                null,
-					                                x => { },
-					                                this,
-					                                SubscriptionType.RemoteProcedure,
-					                                timeout).Start();
+													_defaultDeadLetterConfiguration,
+													serializationStrategy,
+													consumeInfo,
+													queueName /* routing key */,
+													replyAction,
+													null,
+													x => { },
+													this,
+													SubscriptionType.RemoteProcedure,
+													timeout).Start();
 				});
 		}
 
