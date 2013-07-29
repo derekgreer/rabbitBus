@@ -82,7 +82,11 @@ namespace RabbitBus
 				_consumer = new QueueingBasicConsumer(channel);
 				channel.BasicQos(0, _consumeInfo.QualityOfService, false);
 				channel.BasicConsume(_consumeInfo.QueueName, _consumeInfo.IsAutoAcknowledge, _consumer);
-				_thread = new Thread(() => Subscribe(channel));
+				_thread = new Thread(() =>
+				    {
+				        Subscribe(channel);
+                        channel.Dispose();
+				    });
 				_thread.Start();
 
 				string log =
