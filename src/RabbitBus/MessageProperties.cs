@@ -13,6 +13,8 @@ namespace RabbitBus
 
 		public IDictionary Headers { get; set; }
 
+		public string CorrelationId { get; set; }
+
 		protected bool Equals(MessageProperties other)
 		{
 			return Expiration.Equals(other.Expiration) && string.Equals(RoutingKey, other.RoutingKey) && Equals(Headers, other.Headers);
@@ -32,7 +34,8 @@ namespace RabbitBus
 			{
 				int hashCode = Expiration.GetHashCode();
 				hashCode = (hashCode*397) ^ (RoutingKey != null ? RoutingKey.GetHashCode() : 0);
-				hashCode = (hashCode*397) ^ (Headers != null ? Headers.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ (Headers != null ? Headers.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ (CorrelationId != null ? CorrelationId.GetHashCode() : 0);
 				return hashCode;
 			}
 		}
