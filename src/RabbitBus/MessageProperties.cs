@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace RabbitBus
 {
@@ -11,7 +12,7 @@ namespace RabbitBus
 
 		public string RoutingKey { get; set; }
 
-		public IDictionary Headers { get; set; }
+		public IDictionary<string, object> Headers { get; set; }
 
 		protected bool Equals(MessageProperties other)
 		{

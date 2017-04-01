@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using RabbitBus.Configuration;
 using RabbitMQ.Client;
-using RabbitMQ.Client.Framing.v0_9_1;
+using RabbitMQ.Client.Framing;
 
 namespace RabbitBus.Specs.Infrastructure
 {
@@ -68,7 +69,7 @@ namespace RabbitBus.Specs.Infrastructure
 			_channel.BasicPublish(_exchangeName, routingKey, properties, msg);
 		}
 
-		public void Publish<TMessage>(TMessage message, IDictionary headers)
+		public void Publish<TMessage>(TMessage message, IDictionary<string, object> headers)
 		{
 			var properties = new BasicProperties();
 			properties.Headers = headers;

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using RabbitBus.Configuration;
 
 namespace RabbitBus.Utilities
@@ -15,6 +16,6 @@ namespace RabbitBus.Utilities
 		IExchangeDeclareInfo Exchange { get; }
 		TimeSpan? Expiration { get; }
 		IDeadLetterConfiguration DeadLetterConfiguration { get; }
-		IDictionary Headers { get; }
+		IDictionary<string, object> Headers { get; }
 	}
 }

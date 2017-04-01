@@ -154,7 +154,7 @@ namespace RabbitBus
 					// Closing/disposing channels on IConnection.ConnectionShutdown causes a deadlock, so
 					// the ISession.SessionShutdown event is used here to infer a connection shutdown. 
 					// ------------------------------------------------------------------------------------------
-					((ConnectionBase) connection).m_session0.SessionShutdown += UnexpectedConnectionShutdown;
+					connection.ConnectionShutdown += UnexpectedConnectionShutdown;
 					connection.CallbackException += ConnectionCallbackException;
 					_messagePublisher.SetConnection(connection);
 
@@ -190,10 +190,10 @@ namespace RabbitBus
 			}
 		}
 
-		void UnexpectedConnectionShutdown(ISession session, ShutdownEventArgs reason)
+		void UnexpectedConnectionShutdown(object sender, ShutdownEventArgs reason)
 		{
 			Logger.Current.Write("Connection was shut down.", TraceEventType.Information);
-			((ConnectionBase) _connection).m_session0.SessionShutdown -= UnexpectedConnectionShutdown;
+			_connection.ConnectionShutdown -= UnexpectedConnectionShutdown;
 
 			lock (_connectionLock)
 			{
@@ -270,7 +270,7 @@ namespace RabbitBus
 			{
 				if (_connection != null)
 				{
-					((ConnectionBase) _connection).m_session0.SessionShutdown -= UnexpectedConnectionShutdown;
+					_connection.ConnectionShutdown -= UnexpectedConnectionShutdown;
 					if (_connection != null && _connection.IsOpen)
 					{
 						_connection.Close();

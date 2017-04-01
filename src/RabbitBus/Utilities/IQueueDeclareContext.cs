@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace RabbitBus.Utilities
 {
@@ -13,6 +14,6 @@ namespace RabbitBus.Utilities
 		IQueueDeclareContext WithDeadLetterExchange(string deadLetterExchange);
 		IQueueDeclareContext WithDeadLetterExchange(string deadLetterExchange, string deadletterRoutingKey);
 		IQueueDeclareContext WithRoutingKey(string routingKey);
-		IQueueDeclareContext WithHeaders(IDictionary dictionary);
+		IQueueDeclareContext WithHeaders(IDictionary<string, object> dictionary);
 	}
 }

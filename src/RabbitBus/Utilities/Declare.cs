@@ -25,7 +25,7 @@ namespace RabbitBus.Utilities
 			IConnection connection = connectionFactory.CreateConnection();
 			IModel channel = connection.CreateModel();
 
-			IDictionary arguments = null;
+			IDictionary<string, object> arguments = null;
 
 			if (queueDeclareInfo.DeadLetterConfiguration != null)
 			{

@@ -22,7 +22,7 @@ namespace RabbitBus
 		readonly Action<IErrorContext> _defaultErrorCallback;
 		readonly ISerializationStrategy _defaultSerializationStrategy;
 		readonly IMessagePublisher _messagePublisher;
-		readonly IDictionary _queueProperties;
+		readonly IDictionary<string, object> _queueProperties;
 		readonly string _routingKey;
 		readonly Stopwatch _stopwatch = new Stopwatch();
 		readonly SubscriptionType _subscriptionType;
@@ -35,7 +35,7 @@ namespace RabbitBus
 		public Subscription(IConnection connection, IDeadLetterConfiguration defaultDeadLetterConfiguration,
 		                    ISerializationStrategy defaultSerializationStrategy, IConsumeInfo consumeInfo,
 		                    string routingKey,
-		                    Action<IMessageContext<TMessage>> callback, IDictionary queueProperties,
+		                    Action<IMessageContext<TMessage>> callback, IDictionary<string, object> queueProperties,
 		                    Action<IErrorContext> defaultErrorCallback, IMessagePublisher messagePublisher,
 		                    SubscriptionType subscriptionType, TimeSpan callbackTimeout)
 		{
@@ -57,7 +57,7 @@ namespace RabbitBus
 			try
 			{
 				IModel channel = _connection.CreateModel();
-				channel.ModelShutdown += ChannelModelShutdown;
+                channel.ModelShutdown += ChannelModelShutdown;
 
 				if (_consumeInfo.ExchangeName != string.Empty)
 				{
@@ -67,7 +67,7 @@ namespace RabbitBus
 				}
 
 
-				IDictionary queueDeclareArguments = null;
+				IDictionary<string, object> queueDeclareArguments = null;
 				queueDeclareArguments = AddDeadLetterArguments(queueDeclareArguments);
 				queueDeclareArguments = AddExpirationArguments(queueDeclareArguments);
 
@@ -128,7 +128,7 @@ namespace RabbitBus
 			Start();
 		}
 
-		IDictionary AddExpirationArguments(IDictionary exchangeArguments)
+        IDictionary<string, object> AddExpirationArguments(IDictionary<string, object> exchangeArguments)
 		{
 			if (_consumeInfo.Expiration.HasValue)
 			{
@@ -142,9 +142,9 @@ namespace RabbitBus
 			return exchangeArguments;
 		}
 
-		IDictionary AddDeadLetterArguments(IDictionary exchangeArguments)
+        IDictionary<string, object> AddDeadLetterArguments(IDictionary<string, object> exchangeArguments)
 		{
-			IDictionary queueDeclareArgs = exchangeArguments;
+            IDictionary<string, object> queueDeclareArgs = exchangeArguments;
 
 			IDeadLetterConfiguration deadLetterConfig = _consumeInfo.DeadLetterConfiguration ?? _defaultDeadLetterConfiguration;
 
@@ -192,12 +192,10 @@ namespace RabbitBus
 
 				try
 				{
-					object eArgs = null;
-					_consumer.Queue.Dequeue(1000, out eArgs);
+					_consumer.Queue.Dequeue(1000, out eventArgs);
 
-					if (eArgs != null)
+					if (eventArgs != null)
 					{
-						eventArgs = (BasicDeliverEventArgs) eArgs;
 						logger.Write(string.Format("Message received: {0} bytes", eventArgs.Body.Length), TraceEventType.Information);
 						ISerializationStrategy serializationStrategy = _consumeInfo.SerializationStrategy ??
 						                                               _defaultSerializationStrategy;
@@ -255,13 +253,14 @@ namespace RabbitBus
 			}
 		}
 	
-		void ChannelModelShutdown(IModel model, ShutdownEventArgs reason)
+		void ChannelModelShutdown(object sender, ShutdownEventArgs reason)
 		{
 			try
 			{
 				Logger.Current.Write("Closing the channel ... ", TraceEventType.Information);
-				model.Close();
-				_threadCancelled = true;
+			    var model = sender as IModel;
+			    model?.Close();
+			    _threadCancelled = true;
 				Logger.Current.Write("Channel closed.", TraceEventType.Information);
 			}
 			catch (Exception e)
