@@ -95,7 +95,7 @@ namespace RabbitBus.Specs.Integration
 		static RabbitExchange _exchange;
 		static Bus _bus;
 		static TestMessage _actualMessage = new TestMessage("original");
-		static IDictionary _headers;
+		static IDictionary<string, object> _headers;
 
 
 		Establish context = () =>
@@ -104,7 +104,7 @@ namespace RabbitBus.Specs.Integration
 				_bus = new BusBuilder().Configure(ctx => ctx.Consume<TestMessage>().WithExchange(SpecId).WithQueue(SpecId)).Build();
 				_bus.Connect();
 
-				_headers = new Dictionary<object, string>();
+				_headers = new Dictionary<string, object>();
 
 				_bus.Subscribe<TestMessage>(m =>
 					{

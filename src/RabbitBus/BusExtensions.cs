@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace RabbitBus
 {
@@ -10,7 +11,7 @@ namespace RabbitBus
 			bus.Publish(message, MessageProperties.Empty);
 		}
 
-		public static void Publish<TMessage>(this IBus bus, TMessage message, IDictionary headers)
+		public static void Publish<TMessage>(this IBus bus, TMessage message, IDictionary<string, object> headers)
 		{
 			bus.Publish(message, new MessageProperties { Headers = headers });
 		}
@@ -45,7 +46,7 @@ namespace RabbitBus
 			bus.Unsubscribe<TMessage>(new MessageProperties { RoutingKey = routingKey });
 		}
 
-		public static void Unsubscribe<TMessage>(this IBus bus, IDictionary headers)
+		public static void Unsubscribe<TMessage>(this IBus bus, IDictionary<string, object> headers)
 		{
 			bus.Unsubscribe<TMessage>(new MessageProperties { Headers = headers });
 		}
@@ -60,7 +61,7 @@ namespace RabbitBus
 			bus.Subscribe(action, new MessageProperties { RoutingKey = routingKey });
 		}
 
-		public static void Subscribe<TMessage>(this IBus bus, Action<IMessageContext<TMessage>> action, IDictionary headers)
+		public static void Subscribe<TMessage>(this IBus bus, Action<IMessageContext<TMessage>> action, IDictionary<string, object> headers)
 		{
 			bus.Subscribe(action, new MessageProperties { Headers = headers });
 		}

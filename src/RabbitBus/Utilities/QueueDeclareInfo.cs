@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using RabbitBus.Configuration;
 using RabbitMQ.Client;
 
@@ -79,13 +80,13 @@ namespace RabbitBus.Utilities
 			return this;
 		}
 
-		public IQueueDeclareContext WithHeaders(IDictionary dictionary)
+		public IQueueDeclareContext WithHeaders(IDictionary<string, object> dictionary)
 		{
 			Headers = dictionary;
 			return this;
 		}
 
-		public IDictionary Headers { get; private set; }
+		public IDictionary<string, object> Headers { get; private set; }
 
 		public IDeadLetterConfiguration DeadLetterConfiguration { get; private set; }
 

@@ -34,7 +34,7 @@ namespace RabbitBus.Specs.Integration
 		static Bus _bus;
 		static TestMessage _actualMessage;
 		static readonly TestMessage _default = new TestMessage("error");
-		static IDictionary _headers;
+		static IDictionary<string, object> _headers;
 
 		Establish context = () =>
 			{
@@ -68,7 +68,7 @@ namespace RabbitBus.Specs.Integration
 		static Bus _bus;
 		static TestMessage _actualMessage;
 		static readonly TestMessage _default = new TestMessage("error");
-		static IDictionary _headers;
+		static IDictionary<string, object> _headers;
 
 		Establish context = () =>
 			{

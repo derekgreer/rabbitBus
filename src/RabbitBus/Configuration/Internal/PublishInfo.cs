@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace RabbitBus.Configuration.Internal
 {
@@ -22,7 +23,7 @@ namespace RabbitBus.Configuration.Internal
 		public string DefaultRoutingKey { get; set; }
 		public bool IsSigned { get; set; }
 		public IConsumeInfo ReplyInfo { get; set; }
-		public IDictionary DefaultHeaders { get; set; }
+        public IDictionary<string, object> DefaultHeaders { get; set; }
 		public TimeSpan? Expiration { get; set; }
 	}
 }

@@ -1,12 +1,14 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using RabbitBus.Configuration;
 using RabbitBus.Configuration.Internal;
 using RabbitBus.Logging;
 using RabbitMQ.Client;
-using RabbitMQ.Client.Framing.v0_9_1;
+using RabbitMQ.Client.Framing;
+
 
 namespace RabbitBus
 {
@@ -125,7 +127,7 @@ namespace RabbitBus
 
 			var properties = new BasicProperties();
 
-			ListDictionary messageHeaders = GetHeaders(messageProperties.Headers, publishInfo.DefaultHeaders);
+			IDictionary<string, object> messageHeaders = GetHeaders(messageProperties.Headers, publishInfo.DefaultHeaders);
 
 			if (messageHeaders.Count != 0)
 			{
@@ -198,13 +200,13 @@ namespace RabbitBus
 		}
 
 
-		static ListDictionary GetHeaders(IDictionary headers, IDictionary defaultHeaders)
+		static IDictionary<string, object> GetHeaders(IDictionary<string, object> headers, IDictionary<string, object> defaultHeaders)
 		{
-			var messageHeaders = new ListDictionary();
+			var messageHeaders = new Dictionary<string, object>();
 
 			if (defaultHeaders != null)
 			{
-				foreach (object key in defaultHeaders.Keys)
+				foreach (string key in defaultHeaders.Keys)
 				{
 					messageHeaders.Add(key, defaultHeaders[key]);
 				}
@@ -212,7 +214,7 @@ namespace RabbitBus
 
 			if (headers != null)
 			{
-				foreach (object key in headers.Keys)
+				foreach (string key in headers.Keys)
 				{
 					messageHeaders.Add(key, headers[key]);
 				}

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using RabbitBus.Configuration;
 using RabbitMQ.Client;
@@ -18,7 +19,7 @@ namespace RabbitBus.Specs.Infrastructure
 		{
 		}
 
-		public RabbitQueue(string exchangeName, string queueName, IDictionary headers)
+		public RabbitQueue(string exchangeName, string queueName, IDictionary<string, object> headers)
 			: this("localhost", exchangeName, ExchangeType.Direct, queueName, false, true, false, true, "", headers)
 		{
 		}
@@ -42,7 +43,7 @@ namespace RabbitBus.Specs.Infrastructure
 
 		public RabbitQueue(string host, string exchangeName, string exchangeType, string queueName, bool durableExchange,
 		                   bool autoDeleteExchange, bool durableQueue, bool autoDeleteQueue, string routingKey,
-		                   IDictionary headers):
+		                   IDictionary<string, object> headers):
 			this(host, exchangeName, exchangeType, queueName, durableExchange, autoDeleteExchange,
 								 durableQueue, autoDeleteQueue, routingKey, headers, null)
 		{
@@ -51,13 +52,13 @@ namespace RabbitBus.Specs.Infrastructure
 
 		public RabbitQueue(string host, string exchangeName, string exchangeType, string queueName, bool durableExchange,
 		                   bool autoDeleteExchange, bool durableQueue, bool autoDeleteQueue, string routingKey,
-		                   IDictionary headers, IDictionary queueProperties)
+		                   IDictionary<string, object> headers, IDictionary<string, object> queueProperties)
 		{
 			_queueName = queueName;
 			var connectionFactory = new ConnectionFactory {HostName = host};
 			_connection = connectionFactory.CreateConnection();
 			_channel = _connection.CreateModel();
-			_channel.ModelShutdown += new ModelShutdownEventHandler(_channel_ModelShutdown);
+			_channel.ModelShutdown += _channel_ModelShutdown;
 
 			if (exchangeName != string.Empty)
 			{
@@ -71,7 +72,7 @@ namespace RabbitBus.Specs.Infrastructure
 			}
 		}
 
-		void _channel_ModelShutdown(IModel model, ShutdownEventArgs reason)
+		void _channel_ModelShutdown(object sender, ShutdownEventArgs reason)
 		{
 		}
 
